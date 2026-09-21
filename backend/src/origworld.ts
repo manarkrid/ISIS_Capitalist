@@ -12,7 +12,7 @@ export const origworld = {
   totalangels: 0,
   activeangels: 0,
   angelbonus: 2,
-  lastupdate: 0,
+  lastupdate: new Date().toISOString(),
   products: [
     {
       id: 1,
