@@ -36,9 +36,15 @@ export class AppService {
    * Pour chaque produit, calcule les revenus générés et met à jour timeleft.
    */
   updateWorld(world: any): any {
-    const now = Date.now();
-    const elapsed = world.lastupdate === 0 ? 0 : now - world.lastupdate;
-    world.lastupdate = now;
+    const now = new Date();
+    const previousUpdate =
+      typeof world.lastupdate === 'number'
+        ? world.lastupdate
+        : Date.parse(world.lastupdate);
+    const elapsed = Number.isFinite(previousUpdate)
+      ? Math.max(0, now.getTime() - previousUpdate)
+      : 0;
+    world.lastupdate = now.toISOString();
 
     if (elapsed <= 0) return world;
 
