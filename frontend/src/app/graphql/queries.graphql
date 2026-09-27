@@ -67,3 +67,39 @@ query getWorld($user: String!) {
     }
   }
 }
+
+mutation acheterQtProduit($user: String!, $id: Int!, $quantite: Int!) {
+  acheterQtProduit(user: $user, id: $id, quantite: $quantite) {
+    id
+  }
+}
+
+mutation lancerProductionProduit($user: String!, $id: Int!) {
+  lancerProductionProduit(user: $user, id: $id) {
+    id
+  }
+}
+
+mutation EngagerManager($user: String!, $name: String!) {
+  engagerManager(user: $user, name: $name) {
+    name
+  }
+}
+
+mutation AcheterCashUpgrade($user: String!, $name: String!) {
+  acheterCashUpgrade(user: $user, name: $name) {
+    name
+  }
+}
+
+mutation AcheterAngelUpgrade($user: String!, $name: String!) {
+  acheterAngelUpgrade(user: $user, name: $name) {
+    name
+  }
+}
+
+mutation ResetWorld($user: String!) {
+  resetWorld(user: $user) {
+    name
+  }
+}

@@ -15,10 +15,12 @@ export const appConfig: ApplicationConfig = {
       const httpLink = inject(HttpLink);
       return {
         cache: new InMemoryCache(),
-        link: httpLink.create({
-          uri: 'http://localhost:3000/graphql',
-        }),
+        link: httpLink.create({ uri: 'http://localhost:3000/graphql' }),
+        defaultOptions: {
+          query: { fetchPolicy: 'no-cache' },
+          watchQuery: { fetchPolicy: 'no-cache' },
+        },
       };
     }),
-  ]
+  ],
 };
