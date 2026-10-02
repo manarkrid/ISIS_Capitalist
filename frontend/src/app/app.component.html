@@ -1,230 +1,149 @@
-﻿<div class="game-layout">
-
-  <!-- Colonne gauche -->
-  <aside class="left-panel">
-    <div class="world-header">
-      <img class="round world-logo"
-           [src]="gameService.server() + '/' + world()?.logo"
-           alt="world"
-           (error)="$any($event.target).src='placeholder.svg'" />
-      <h2 class="world-name">{{ world()?.name }}</h2>
-    </div>
-
+<div class="game-layout">
+  <aside class="left-panel" aria-label="Votre empire culinaire">
+    <a class="brand" href="#specialites">
+      @if (world(); as currentWorld) { <img [src]="gameService.imageUrl(currentWorld.logo)" alt="" (error)="imageFallback($event)" /> }
+      <span>Tunisian<br><strong>Capitalist</strong></span>
+    </a>
+    <p class="sidebar-intro">Des saveurs tunisiennes.<br>Un empire à construire.</p>
     <div class="stats-block">
-      <div class="stat-row">
-        <span class="stat-label">Argent</span>
-        <span class="stat-value gold" [innerHTML]="(world()?.money ?? 0) | bigvalue"></span>
-        <span class="stat-sym">$</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Score</span>
-        <span class="stat-value" [innerHTML]="(world()?.score ?? 0) | bigvalue"></span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Anges actifs</span>
-        <span class="stat-value angel">{{ world()?.activeangels ?? 0 }}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Bonus/ange</span>
-        <span class="stat-value">{{ world()?.angelbonus ?? 2 }}%</span>
-      </div>
+      <div class="stat-row"><span>Revenus cumulés</span><strong><span [innerHTML]="(world()?.score ?? 0) | bigvalue"></span> <small>DT</small></strong></div>
+      <div class="stat-row"><span>Anges actifs</span><strong>{{ (world()?.activeangels ?? 0) | number:'1.0-0':'fr' }}</strong></div>
+      <div class="stat-row"><span>Bonus par ange</span><strong>+{{ world()?.angelbonus ?? 2 }} %</strong></div>
     </div>
-
-    <div class="action-buttons">
-      <button class="action-btn" [class.badge-active]="badgeManagers() > 0"
-              (click)="showManagers.set(!showManagers())">
-        Managers
-        @if (badgeManagers() > 0) { <span class="badge">{{ badgeManagers() }}</span> }
+    <nav class="action-buttons" aria-label="Gérer votre partie">
+      <button class="action-btn" (click)="openModal('managers')" [disabled]="!world()" aria-haspopup="dialog">
+        <span class="nav-icon" aria-hidden="true">♟</span><span>Managers</span>
+        @if (badgeManagers() > 0) { <span class="badge" [attr.aria-label]="badgeManagers() + ' disponibles'">{{ badgeManagers() }}</span> }
       </button>
-      <button class="action-btn" (click)="showUnlocks.set(!showUnlocks())">
-        Unlocks
+      <button class="action-btn" (click)="openModal('unlocks')" [disabled]="!world()" aria-haspopup="dialog"><span class="nav-icon" aria-hidden="true">↗</span><span>Paliers</span></button>
+      <button class="action-btn" (click)="openModal('upgrades')" [disabled]="!world()" aria-haspopup="dialog">
+        <span class="nav-icon" aria-hidden="true">✦</span><span>Améliorations</span>
+        @if (badgeUpgrades() > 0) { <span class="badge" [attr.aria-label]="badgeUpgrades() + ' disponibles'">{{ badgeUpgrades() }}</span> }
       </button>
-      <button class="action-btn" [class.badge-active]="badgeUpgrades() > 0"
-              (click)="showUpgrades.set(!showUpgrades())">
-        Cash Upgrades
-        @if (badgeUpgrades() > 0) { <span class="badge">{{ badgeUpgrades() }}</span> }
+      <button class="action-btn" (click)="openModal('angels')" [disabled]="!world()" aria-haspopup="dialog">
+        <span class="nav-icon" aria-hidden="true">☀</span><span>Investisseurs</span>
+        @if (newAngels() > 0) { <span class="badge">+{{ newAngels() | number:'1.0-0':'fr' }}</span> }
       </button>
-      <button class="action-btn angel-btn" [class.badge-active]="newAngels() > 0"
-              (click)="showAngels.set(!showAngels())">
-        Investors
-        @if (newAngels() > 0) { <span class="badge">+{{ newAngels() }}</span> }
+      <button class="action-btn" (click)="openModal('angelUpgrades')" [disabled]="!world()" aria-haspopup="dialog">
+        <span class="nav-icon" aria-hidden="true">☆</span><span>Bonus des anges</span>
+        @if (badgeAngels() > 0) { <span class="badge" [attr.aria-label]="badgeAngels() + ' disponibles'">{{ badgeAngels() }}</span> }
       </button>
-    </div>
-
-    <div class="player-block">
-      <div class="player-label">Your ID :</div>
-      <input class="player-input" type="text"
-             [ngModel]="usernameInput()"
-             (ngModelChange)="usernameInput.set($event)"
-             (keydown.enter)="commitName()" />
-      <button class="refresh-btn" (click)="refreshWorld()">Refresh</button>
-    </div>
+    </nav>
+    <form class="player-block" (ngSubmit)="commitName()">
+      <label for="player-name">Votre pseudo</label>
+      <div class="player-input-row">
+        <input id="player-name" name="username" type="text" maxlength="40" autocomplete="off" required [ngModel]="usernameInput()" (ngModelChange)="usernameInput.set($event)" [disabled]="gameService.loading() || gameService.busy()" aria-describedby="player-help" />
+        <button type="submit" class="player-submit" [disabled]="!usernameInput().trim() || gameService.loading() || gameService.busy()" aria-label="Charger la partie de ce pseudo">→</button>
+      </div>
+      <p id="player-help">Un pseudo correspond à une partie.</p>
+      <button type="button" class="refresh-btn" (click)="refreshWorld()" [disabled]="gameService.loading() || gameService.busy()">↻ Actualiser la partie</button>
+    </form>
   </aside>
-
-  <!-- Colonne droite -->
-  <main class="right-panel">
-    <div class="main-header">
-      <h1 class="game-title">ISIS CAPITALIST</h1>
-      <button class="qt-switch" (click)="cycleQt()">{{ qtLabels[qtmulti()] }}</button>
-    </div>
-    <div class="products-list">
-      @for (j of [0,1,2,3,4,5]; track j) {
-        <app-produit [prod]="world()?.products?.[j]" [qtmulti]="qtmulti()"></app-produit>
-      }
-    </div>
+  <main class="right-panel" id="specialites">
+    <header class="main-header">
+      <div><p class="eyebrow">BIENVENUE EN CUISINE</p><h1>{{ world()?.name || 'Tunisian Capitalist' }}</h1></div>
+      <span class="save-status" role="status">{{ gameService.loading() ? 'Chargement…' : gameService.busy() ? 'Enregistrement…' : gameService.error() ? 'Connexion interrompue' : 'Partie sauvegardée' }}</span>
+    </header>
+    <section class="balance-panel" aria-label="Argent disponible">
+      <div><p class="balance-label">Votre caisse</p><div class="balance"><span [innerHTML]="(world()?.money ?? 0) | bigvalue"></span><span class="currency">DT</span></div></div>
+      <p>Commencez petit.<br>Faites grandir votre cuisine.</p>
+    </section>
+    @if (gameService.error()) {
+      <div class="error-panel" role="alert"><div><strong>La partie n’a pas pu être synchronisée.</strong><p>{{ gameService.error() }}</p></div><button class="secondary-btn" (click)="refreshWorld()" [disabled]="gameService.loading() || gameService.busy()">Réessayer</button></div>
+    }
+    @if (world(); as currentWorld) {
+      <div class="products-toolbar">
+        <div><h2>Vos spécialités</h2><p>Cliquez sur un plat pour lancer sa production.</p></div>
+        <div class="quantity-control" role="group" aria-label="Quantité à acheter">
+          @for (quantity of qtOptions; track quantity) { <button [class.selected]="qtmulti() === quantity" [attr.aria-pressed]="qtmulti() === quantity" (click)="qtmulti.set(quantity)">{{ qtLabels[quantity] }}</button> }
+        </div>
+      </div>
+      <div class="products-list" [attr.aria-busy]="gameService.loading()">
+        @for (product of currentWorld.products; track product.id) { <app-produit [prod]="product" [qtmulti]="qtmulti()"></app-produit> }
+      </div>
+      <p class="game-tip"><span aria-hidden="true">✦</span> Les managers produisent automatiquement, même en votre absence.</p>
+    } @else if (gameService.loading()) {
+      <div class="loading-panel" role="status"><span class="loader" aria-hidden="true"></span><h2>On ouvre la cuisine…</h2><p>Chargement de votre partie.</p></div>
+    }
   </main>
-
 </div>
 
-<!-- Modal Managers -->
-@if (showManagers()) {
-  <div class="modal-overlay" (click)="showManagers.set(false)"></div>
-  <div class="modal">
-    <h2 class="modal-title">Managers</h2>
-    <div class="modal-list">
-      @for (manager of world()?.managers; track manager.name) {
-        @if (!manager.unlocked) {
-          <div class="modal-item" [class.affordable]="(world()?.money ?? 0) >= manager.seuil">
-            <img class="round item-img" [src]="gameService.server() + '/' + manager.logo"
-                 alt="" (error)="$any($event.target).src='placeholder.svg'" />
-            <div class="item-info">
-              <div class="item-name">{{ manager.name }}</div>
-              <div class="item-sub">Gere : {{ getProdName(manager.idcible) }}</div>
-            </div>
-            <div class="item-right">
-              <div class="item-cost" [innerHTML]="manager.seuil | bigvalue"></div>
-              <button class="hire-btn" [disabled]="(world()?.money ?? 0) < manager.seuil"
-                      (click)="hireManager(manager)">Hire !</button>
-            </div>
+<dialog #gameDialog class="modal" aria-labelledby="modal-title" (cancel)="closeModal()" (click)="dismissBackdrop($event)">
+  <div class="modal-content">
+    <header class="modal-header"><div><p class="eyebrow">VOTRE CUISINE GRANDIT</p><h2 id="modal-title">{{ activeModal() ? modalTitles[activeModal()!] : '' }}</h2></div><button class="close-btn" (click)="closeModal()" aria-label="Fermer la fenêtre" autofocus>×</button></header>
+    @if (gameService.error()) { <p class="modal-error" role="alert">{{ gameService.error() }}</p> }
+    <div class="modal-body">
+      @switch (activeModal()) {
+        @case ('managers') {
+          <p class="modal-description">Confiez une spécialité à un manager pour qu’elle produise toute seule.</p>
+          <div class="modal-list">
+            @for (manager of managers(); track manager.name) {
+              <article class="modal-item">
+                <img class="item-img manager-img" [src]="gameService.imageUrl(manager.logo)" alt="" (error)="imageFallback($event)" />
+                <div class="item-info"><h3>{{ manager.name }}</h3><p>{{ getProdName(manager.idcible) }}</p><span class="bonus-tag">Production automatique</span></div>
+                <div class="item-right"><span class="item-cost"><span [innerHTML]="manager.seuil | bigvalue"></span> DT</span><button class="primary-btn" [disabled]="unavailable() || (world()?.money ?? 0) < manager.seuil" (click)="hireManager(manager)">Engager</button></div>
+              </article>
+            } @empty { <p class="empty-state">Toute votre équipe est au travail !</p> }
           </div>
         }
-      }
-    </div>
-    <button class="modal-close" (click)="showManagers.set(false)">Fermer</button>
-  </div>
-}
-
-<!-- Modal Unlocks -->
-@if (showUnlocks()) {
-  <div class="modal-overlay" (click)="showUnlocks.set(false)"></div>
-  <div class="modal">
-    <h2 class="modal-title">Unlocks</h2>
-    <div class="modal-list">
-      @for (prod of world()?.products; track prod.id) {
-        @for (palier of prod.paliers; track palier.name) {
-          @if (!palier.unlocked) {
-            <div class="modal-item">
-              <img class="round item-img" [src]="gameService.server() + '/' + palier.logo"
-                   alt="" (error)="$any($event.target).src='placeholder.svg'" />
-              <div class="item-info">
-                <div class="item-name">{{ palier.name }}</div>
-                <div class="item-sub">{{ prod.name }} - seuil {{ palier.seuil }}</div>
-                <span class="bonus-tag">{{ ratioLabel(palier) }}</span>
-              </div>
+        @case ('unlocks') {
+          <p class="modal-description">Atteignez ces quantités pour recevoir automatiquement un bonus.</p>
+          <div class="modal-list">
+            @for (unlock of unlocks(); track unlock.palier.name) {
+              <article class="modal-item">
+                <img class="item-img" [src]="gameService.imageUrl(unlock.palier.logo)" alt="" (error)="imageFallback($event)" />
+                <div class="item-info"><h3>{{ unlock.palier.name }}</h3><p>{{ unlock.target }}</p><span class="bonus-tag">{{ ratioLabel(unlock.palier) }}</span></div>
+                <div class="unlock-quantity"><strong>{{ unlock.quantity }} / {{ unlock.palier.seuil }}</strong><span>possédés</span></div>
+              </article>
+            } @empty { <p class="empty-state">Vous avez débloqué tous les paliers !</p> }
+          </div>
+        }
+        @case ('upgrades') {
+          <p class="modal-description">Réinvestissez votre argent pour améliorer vos productions.</p>
+          <div class="modal-list">
+            @for (upgrade of upgrades(); track upgrade.name) {
+              <article class="modal-item">
+                <img class="item-img" [src]="gameService.imageUrl(upgrade.logo)" alt="" (error)="imageFallback($event)" />
+                <div class="item-info"><h3>{{ upgrade.name }}</h3><p>{{ getProdName(upgrade.idcible) }}</p><span class="bonus-tag">{{ ratioLabel(upgrade) }}</span></div>
+                <div class="item-right"><span class="item-cost"><span [innerHTML]="upgrade.seuil | bigvalue"></span> DT</span><button class="primary-btn" [disabled]="unavailable() || (world()?.money ?? 0) < upgrade.seuil" (click)="buyCashUpgrade(upgrade)">Acheter</button></div>
+              </article>
+            } @empty { <p class="empty-state">Toutes les améliorations sont acquises !</p> }
+          </div>
+        }
+        @case ('angels') {
+          <p class="modal-description">Vos revenus cumulés attirent des anges. Recommencez votre activité pour les récupérer et augmenter vos futurs revenus.</p>
+          <div class="angel-stats">
+            <div><span>Anges actifs</span><strong>{{ (world()?.activeangels ?? 0) | number:'1.0-0':'fr' }}</strong></div>
+            <div><span>Anges gagnés au total</span><strong>{{ (world()?.totalangels ?? 0) | number:'1.0-0':'fr' }}</strong></div>
+            <div><span>Bonus par ange</span><strong>+{{ world()?.angelbonus ?? 2 }} %</strong></div>
+            <div class="angel-new"><span>À récupérer</span><strong>+{{ newAngels() | number:'1.0-0':'fr' }}</strong></div>
+          </div>
+          @if (resetConfirmation()) {
+            <div class="reset-confirmation" role="alert">
+              <h3>Recommencer votre activité ?</h3><p>Votre argent, vos produits, vos managers et vos améliorations seront remis à zéro. Vous conserverez vos anges actifs et gagnerez <strong>{{ newAngels() | number:'1.0-0':'fr' }} anges supplémentaires</strong>.</p>
+              <div class="confirmation-actions"><button class="secondary-btn" [disabled]="gameService.busy()" (click)="resetConfirmation.set(false)">Annuler</button><button class="danger-btn" [disabled]="unavailable()" (click)="doReset()">Confirmer et recommencer</button></div>
             </div>
+          } @else {
+            <button class="primary-btn reset-btn" [disabled]="unavailable()" (click)="resetConfirmation.set(true)">Recommencer et récupérer {{ newAngels() | number:'1.0-0':'fr' }} anges</button>
+            @if (newAngels() === 0) { <p class="reset-hint">Continuez à produire : aucun nouvel ange à récupérer pour le moment.</p> }
           }
         }
-      }
-      @for (palier of world()?.allunlocks; track palier.name) {
-        @if (!palier.unlocked) {
-          <div class="modal-item all-unlock">
-            <img class="round item-img" [src]="gameService.server() + '/' + palier.logo"
-                 alt="" (error)="$any($event.target).src='placeholder.svg'" />
-            <div class="item-info">
-              <div class="item-name">{{ palier.name }}</div>
-              <div class="item-sub">Tous les produits - seuil {{ palier.seuil }}</div>
-              <span class="bonus-tag">{{ ratioLabel(palier) }}</span>
-            </div>
+        @case ('angelUpgrades') {
+          <p class="modal-description">Dépensez vos anges actifs contre un bonus. Les anges dépensés ne contribuent plus au bonus de revenu par ange.</p>
+          <p class="angel-balance">{{ (world()?.activeangels ?? 0) | number:'1.0-0':'fr' }} anges disponibles · +{{ world()?.angelbonus ?? 2 }} % par ange</p>
+          <div class="modal-list">
+            @for (upgrade of angelUpgrades(); track upgrade.name) {
+              <article class="modal-item">
+                <img class="item-img" [src]="gameService.imageUrl(upgrade.logo)" alt="" (error)="imageFallback($event)" />
+                <div class="item-info"><h3>{{ upgrade.name }}</h3><p>{{ getProdName(upgrade.idcible) }}</p><span class="bonus-tag">{{ ratioLabel(upgrade) }}</span></div>
+                <div class="item-right"><span class="item-cost">{{ upgrade.seuil | number:'1.0-0':'fr' }} anges</span><button class="primary-btn" [disabled]="unavailable() || (world()?.activeangels ?? 0) < upgrade.seuil" (click)="buyAngelUpgrade(upgrade)">Acheter</button></div>
+              </article>
+            } @empty { <p class="empty-state">Toutes les améliorations des anges sont acquises !</p> }
           </div>
         }
       }
     </div>
-    <button class="modal-close" (click)="showUnlocks.set(false)">Fermer</button>
+    <div class="modal-snack" role="status" aria-live="polite" [class.visible]="snackVisible()">{{ snackVisible() && activeModal() ? snackText() : '' }}</div>
   </div>
-}
-
-<!-- Modal Cash Upgrades -->
-@if (showUpgrades()) {
-  <div class="modal-overlay" (click)="showUpgrades.set(false)"></div>
-  <div class="modal">
-    <h2 class="modal-title">Cash Upgrades</h2>
-    <div class="modal-list">
-      @for (upgrade of world()?.upgrades; track upgrade.name) {
-        @if (!upgrade.unlocked) {
-          <div class="modal-item" [class.affordable]="(world()?.money ?? 0) >= upgrade.seuil">
-            <img class="round item-img" [src]="gameService.server() + '/' + upgrade.logo"
-                 alt="" (error)="$any($event.target).src='placeholder.svg'" />
-            <div class="item-info">
-              <div class="item-name">{{ upgrade.name }}</div>
-              <div class="item-sub">{{ upgrade.idcible === 0 ? 'Tous les produits' : getProdName(upgrade.idcible) }}</div>
-              <span class="bonus-tag">{{ ratioLabel(upgrade) }}</span>
-            </div>
-            <div class="item-right">
-              <div class="item-cost" [innerHTML]="upgrade.seuil | bigvalue"></div>
-              <button class="hire-btn" [disabled]="(world()?.money ?? 0) < upgrade.seuil"
-                      (click)="buyCashUpgrade(upgrade)">Buy !</button>
-            </div>
-          </div>
-        }
-      }
-    </div>
-    <button class="modal-close" (click)="showUpgrades.set(false)">Fermer</button>
-  </div>
-}
-
-<!-- Modal Angels / Investors -->
-@if (showAngels()) {
-  <div class="modal-overlay" (click)="showAngels.set(false)"></div>
-  <div class="modal angel-modal">
-    <h2 class="modal-title">Investors (Anges)</h2>
-    <div class="angel-stats">
-      <div class="angel-stat">
-        <span class="angel-stat-label">Anges actifs</span>
-        <span class="angel-stat-value">{{ world()?.activeangels }}</span>
-      </div>
-      <div class="angel-stat">
-        <span class="angel-stat-label">Total accumule</span>
-        <span class="angel-stat-value">{{ world()?.totalangels }}</span>
-      </div>
-      <div class="angel-stat">
-        <span class="angel-stat-label">Nouveaux si reset</span>
-        <span class="angel-stat-value angel-new">+{{ newAngels() }}</span>
-      </div>
-      <div class="angel-stat">
-        <span class="angel-stat-label">Bonus par ange</span>
-        <span class="angel-stat-value">{{ world()?.angelbonus }}%</span>
-      </div>
-    </div>
-    <button class="reset-btn" (click)="doReset()">
-      Reset and recover {{ newAngels() }} angels
-    </button>
-    <h3 class="modal-subtitle">Angel Upgrades</h3>
-    <div class="modal-list">
-      @for (upgrade of world()?.angelupgrades; track upgrade.name) {
-        @if (!upgrade.unlocked) {
-          <div class="modal-item" [class.affordable]="(world()?.activeangels ?? 0) >= upgrade.seuil">
-            <img class="round item-img" [src]="gameService.server() + '/' + upgrade.logo"
-                 alt="" (error)="$any($event.target).src='placeholder.svg'" />
-            <div class="item-info">
-              <div class="item-name">{{ upgrade.name }}</div>
-              <span class="bonus-tag">{{ ratioLabel(upgrade) }}</span>
-            </div>
-            <div class="item-right">
-              <div class="item-cost">{{ upgrade.seuil }} anges</div>
-              <button class="hire-btn" [disabled]="(world()?.activeangels ?? 0) < upgrade.seuil"
-                      (click)="buyAngelUpgrade(upgrade)">Buy !</button>
-            </div>
-          </div>
-        }
-      }
-    </div>
-    <button class="modal-close" (click)="showAngels.set(false)">Fermer</button>
-  </div>
-}
-
-<!-- Snack notification -->
-@if (snackVisible()) {
-  <div class="snack">{{ snackText() }}</div>
-}
-
-
+</dialog>
+<div class="snack" role="status" aria-live="polite" [class.visible]="snackVisible() && !activeModal()">{{ snackVisible() && !activeModal() ? snackText() : '' }}</div>

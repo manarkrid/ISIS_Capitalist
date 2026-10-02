@@ -5,6 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
 import { InMemoryCache } from '@apollo/client/core';
+import { GAME_SERVER_URL } from './game.config';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,7 +16,7 @@ export const appConfig: ApplicationConfig = {
       const httpLink = inject(HttpLink);
       return {
         cache: new InMemoryCache(),
-        link: httpLink.create({ uri: 'http://localhost:3000/graphql' }),
+        link: httpLink.create({ uri: `${GAME_SERVER_URL}/graphql` }),
         defaultOptions: {
           query: { fetchPolicy: 'no-cache' },
           watchQuery: { fetchPolicy: 'no-cache' },

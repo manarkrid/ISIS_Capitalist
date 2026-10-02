@@ -1,23 +1,19 @@
-﻿export enum RatioType {
-  gain = 'gain',
-  vitesse = 'vitesse',
-  ange = 'ange',
-}
+import { RatioType, World } from './graphql.js';
 
-export const origworld = {
+export const origworld: World = {
   name: 'Tunisian Capitalist',
-  logo: 'icones/fond.png',
+  logo: 'icones/tunisie.png',
   money: 100,
   score: 0,
   totalangels: 0,
   activeangels: 0,
   angelbonus: 2,
-  lastupdate: 0,
+  lastupdate: '0',
   products: [
     {
       id: 1,
       name: 'Cookies',
-      logo: 'icones/cookies.jpg',
+      logo: 'icones/cookies_plat.jpg',
       cout: 10,
       croissance: 1.07,
       revenu: 1,
@@ -28,7 +24,7 @@ export const origworld = {
       paliers: [
         {
           name: 'Four du quartier',
-          logo: 'icones/cookies.jpg',
+          logo: 'icones/cookies_plat.jpg',
           seuil: 25,
           idcible: 1,
           ratio: 2,
@@ -37,7 +33,7 @@ export const origworld = {
         },
         {
           name: 'Livraisons express',
-          logo: 'icones/cookies.jpg',
+          logo: 'icones/cookies_plat.jpg',
           seuil: 50,
           idcible: 1,
           ratio: 2,
@@ -46,7 +42,7 @@ export const origworld = {
         },
         {
           name: 'Cookies signature',
-          logo: 'icones/cookies.jpg',
+          logo: 'icones/cookies_plat.jpg',
           seuil: 100,
           idcible: 1,
           ratio: 3,
@@ -57,8 +53,8 @@ export const origworld = {
     },
     {
       id: 2,
-      name: 'Fricasse',
-      logo: 'icones/fricasse.jpg',
+      name: 'Fricassé',
+      logo: 'icones/fricasse_plat.jpg',
       cout: 100,
       croissance: 1.09,
       revenu: 12,
@@ -69,7 +65,7 @@ export const origworld = {
       paliers: [
         {
           name: 'Harissa maison',
-          logo: 'icones/fricasse.jpg',
+          logo: 'icones/fricasse_plat.jpg',
           seuil: 25,
           idcible: 2,
           ratio: 2,
@@ -78,7 +74,7 @@ export const origworld = {
         },
         {
           name: 'Service rapide',
-          logo: 'icones/fricasse.jpg',
+          logo: 'icones/fricasse_plat.jpg',
           seuil: 50,
           idcible: 2,
           ratio: 2,
@@ -86,8 +82,8 @@ export const origworld = {
           unlocked: false,
         },
         {
-          name: 'Fricasse royal',
-          logo: 'icones/fricasse.jpg',
+          name: 'Fricassé royal',
+          logo: 'icones/fricasse_plat.jpg',
           seuil: 100,
           idcible: 2,
           ratio: 3,
@@ -99,7 +95,7 @@ export const origworld = {
     {
       id: 3,
       name: 'Makloub',
-      logo: 'icones/makloub.jpg',
+      logo: 'icones/makloub_plat.jpg',
       cout: 1000,
       croissance: 1.11,
       revenu: 150,
@@ -110,7 +106,7 @@ export const origworld = {
       paliers: [
         {
           name: 'Galette artisanale',
-          logo: 'icones/makloub.jpg',
+          logo: 'icones/makloub_plat.jpg',
           seuil: 25,
           idcible: 3,
           ratio: 2,
@@ -119,7 +115,7 @@ export const origworld = {
         },
         {
           name: 'Plaque chauffante',
-          logo: 'icones/makloub.jpg',
+          logo: 'icones/makloub_plat.jpg',
           seuil: 50,
           idcible: 3,
           ratio: 2,
@@ -128,7 +124,7 @@ export const origworld = {
         },
         {
           name: 'Makloub du chef',
-          logo: 'icones/makloub.jpg',
+          logo: 'icones/makloub_plat.jpg',
           seuil: 100,
           idcible: 3,
           ratio: 3,
@@ -140,7 +136,7 @@ export const origworld = {
     {
       id: 4,
       name: 'Mechwi',
-      logo: 'icones/mechwi.jpg',
+      logo: 'icones/mechwi_plat.jpg',
       cout: 10000,
       croissance: 1.13,
       revenu: 1800,
@@ -151,7 +147,7 @@ export const origworld = {
       paliers: [
         {
           name: "Charbon d'olivier",
-          logo: 'icones/mechwi.jpg',
+          logo: 'icones/mechwi_plat.jpg',
           seuil: 25,
           idcible: 4,
           ratio: 2,
@@ -160,7 +156,7 @@ export const origworld = {
         },
         {
           name: 'Grillade express',
-          logo: 'icones/mechwi.jpg',
+          logo: 'icones/mechwi_plat.jpg',
           seuil: 50,
           idcible: 4,
           ratio: 2,
@@ -168,8 +164,8 @@ export const origworld = {
           unlocked: false,
         },
         {
-          name: 'Mechwi de fete',
-          logo: 'icones/mechwi.jpg',
+          name: 'Mechwi de fête',
+          logo: 'icones/mechwi_plat.jpg',
           seuil: 100,
           idcible: 4,
           ratio: 3,
@@ -181,7 +177,7 @@ export const origworld = {
     {
       id: 5,
       name: 'Zgougou',
-      logo: 'icones/zgougou.jpg',
+      logo: 'icones/zgougou_plat.jpg',
       cout: 100000,
       croissance: 1.15,
       revenu: 22000,
@@ -191,8 +187,8 @@ export const origworld = {
       managerUnlocked: false,
       paliers: [
         {
-          name: 'Pignons selectionnes',
-          logo: 'icones/zgougou.jpg',
+          name: 'Pignons sélectionnés',
+          logo: 'icones/zgougou_plat.jpg',
           seuil: 25,
           idcible: 5,
           ratio: 2,
@@ -200,8 +196,8 @@ export const origworld = {
           unlocked: false,
         },
         {
-          name: 'Preparation rapide',
-          logo: 'icones/zgougou.jpg',
+          name: 'Préparation rapide',
+          logo: 'icones/zgougou_plat.jpg',
           seuil: 50,
           idcible: 5,
           ratio: 2,
@@ -210,7 +206,7 @@ export const origworld = {
         },
         {
           name: 'Assida de prestige',
-          logo: 'icones/zgougou.jpg',
+          logo: 'icones/zgougou_plat.jpg',
           seuil: 100,
           idcible: 5,
           ratio: 3,
@@ -222,7 +218,7 @@ export const origworld = {
     {
       id: 6,
       name: 'Couscous',
-      logo: 'icones/couscous.jpg',
+      logo: 'icones/couscous_plat.jpg',
       cout: 1000000,
       croissance: 1.17,
       revenu: 280000,
@@ -233,7 +229,7 @@ export const origworld = {
       paliers: [
         {
           name: 'Semoule premium',
-          logo: 'icones/couscous.jpg',
+          logo: 'icones/couscous_plat.jpg',
           seuil: 25,
           idcible: 6,
           ratio: 2,
@@ -241,8 +237,8 @@ export const origworld = {
           unlocked: false,
         },
         {
-          name: 'Couscoussier geant',
-          logo: 'icones/couscous.jpg',
+          name: 'Couscoussier géant',
+          logo: 'icones/couscous_plat.jpg',
           seuil: 50,
           idcible: 6,
           ratio: 2,
@@ -251,7 +247,7 @@ export const origworld = {
         },
         {
           name: 'Couscous familial',
-          logo: 'icones/couscous.jpg',
+          logo: 'icones/couscous_plat.jpg',
           seuil: 100,
           idcible: 6,
           ratio: 3,
@@ -281,7 +277,7 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Fierte culinaire nationale',
+      name: 'Fierté culinaire nationale',
       logo: 'icones/fond.png',
       seuil: 50,
       idcible: 0,
@@ -292,8 +288,8 @@ export const origworld = {
   ],
   upgrades: [
     {
-      name: 'Four traditionnel renove',
-      logo: 'icones/cookies.jpg',
+      name: 'Four traditionnel rénové',
+      logo: 'icones/cookies_plat.jpg',
       seuil: 500,
       idcible: 1,
       ratio: 3,
@@ -301,8 +297,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: "Huile d'olive premiere pression",
-      logo: 'icones/fricasse.jpg',
+      name: "Huile d'olive première pression",
+      logo: 'icones/fricasse_plat.jpg',
       seuil: 2000,
       idcible: 2,
       ratio: 3,
@@ -311,7 +307,7 @@ export const origworld = {
     },
     {
       name: 'Plaque de cuisson professionnelle',
-      logo: 'icones/makloub.jpg',
+      logo: 'icones/makloub_plat.jpg',
       seuil: 10000,
       idcible: 3,
       ratio: 3,
@@ -319,8 +315,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Rotissoire artisanale',
-      logo: 'icones/mechwi.jpg',
+      name: 'Rôtissoire artisanale',
+      logo: 'icones/mechwi_plat.jpg',
       seuil: 50000,
       idcible: 4,
       ratio: 3,
@@ -328,8 +324,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Pignons de qualite',
-      logo: 'icones/zgougou.jpg',
+      name: 'Pignons de qualité',
+      logo: 'icones/zgougou_plat.jpg',
       seuil: 200000,
       idcible: 5,
       ratio: 4,
@@ -338,7 +334,7 @@ export const origworld = {
     },
     {
       name: 'Couscoussier professionnel',
-      logo: 'icones/couscous.jpg',
+      logo: 'icones/couscous_plat.jpg',
       seuil: 1000000,
       idcible: 6,
       ratio: 4,
@@ -346,8 +342,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Recette secrete des cookies',
-      logo: 'icones/cookies.jpg',
+      name: 'Recette secrète des cookies',
+      logo: 'icones/cookies_plat.jpg',
       seuil: 5000,
       idcible: 1,
       ratio: 5,
@@ -356,7 +352,7 @@ export const origworld = {
     },
     {
       name: 'Harissa extra forte',
-      logo: 'icones/fricasse.jpg',
+      logo: 'icones/fricasse_plat.jpg',
       seuil: 20000,
       idcible: 2,
       ratio: 5,
@@ -364,8 +360,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Viande marinee du Makloub',
-      logo: 'icones/makloub.jpg',
+      name: 'Viande marinée du Makloub',
+      logo: 'icones/makloub_plat.jpg',
       seuil: 100000,
       idcible: 3,
       ratio: 5,
@@ -373,8 +369,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Marinade speciale Mechwi',
-      logo: 'icones/mechwi.jpg',
+      name: 'Marinade spéciale Mechwi',
+      logo: 'icones/mechwi_plat.jpg',
       seuil: 500000,
       idcible: 4,
       ratio: 5,
@@ -384,8 +380,8 @@ export const origworld = {
   ],
   angelupgrades: [
     {
-      name: 'Benediction de Sidi Bou Said',
-      logo: 'icones/zgougou.jpg',
+      name: 'Bénédiction de Sidi Bou Saïd',
+      logo: 'icones/zgougou_plat.jpg',
       seuil: 10,
       idcible: 0,
       ratio: 3,
@@ -394,7 +390,7 @@ export const origworld = {
     },
     {
       name: 'Festival des saveurs',
-      logo: 'icones/couscous.jpg',
+      logo: 'icones/couscous_plat.jpg',
       seuil: 25,
       idcible: 0,
       ratio: 5,
@@ -402,7 +398,7 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Baraka celeste',
+      name: 'Baraka céleste',
       logo: 'icones/fond.png',
       seuil: 100,
       idcible: -1,
@@ -413,8 +409,8 @@ export const origworld = {
   ],
   managers: [
     {
-      name: 'La patissiere du quartier',
-      logo: 'icones/cookies_plat.jpg',
+      name: 'La pâtissière du quartier',
+      logo: 'icones/cookies.jpg',
       seuil: 1000,
       idcible: 1,
       ratio: 0,
@@ -423,7 +419,7 @@ export const origworld = {
     },
     {
       name: 'Ammar le fricassier',
-      logo: 'icones/fricasse_plat.jpg',
+      logo: 'icones/fricasse.jpg',
       seuil: 10000,
       idcible: 2,
       ratio: 0,
@@ -432,7 +428,7 @@ export const origworld = {
     },
     {
       name: 'Chef Makloub',
-      logo: 'icones/makloub_plat.jpg',
+      logo: 'icones/makloub.jpg',
       seuil: 100000,
       idcible: 3,
       ratio: 0,
@@ -440,8 +436,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'Maitre du Mechwi',
-      logo: 'icones/mechwi_plat.jpg',
+      name: 'Maître du Mechwi',
+      logo: 'icones/mechwi.jpg',
       seuil: 1000000,
       idcible: 4,
       ratio: 0,
@@ -449,8 +445,8 @@ export const origworld = {
       unlocked: false,
     },
     {
-      name: 'La specialiste du Zgougou',
-      logo: 'icones/zgougou_plat.jpg',
+      name: 'La spécialiste du Zgougou',
+      logo: 'icones/zgougou.jpg',
       seuil: 10000000,
       idcible: 5,
       ratio: 0,
@@ -459,7 +455,7 @@ export const origworld = {
     },
     {
       name: 'Si Couscous',
-      logo: 'icones/couscous_plat.jpg',
+      logo: 'icones/couscous.jpg',
       seuil: 100000000,
       idcible: 6,
       ratio: 0,

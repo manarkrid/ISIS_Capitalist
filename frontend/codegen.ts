@@ -1,7 +1,7 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
-  schema: 'http://localhost:3000/graphql', // port du backend  
+  schema: '../backend/src/schema.graphql',
   documents: 'src/**/*.graphql',
   generates: {
     'src/app/graphql/generated.ts': {
@@ -9,7 +9,8 @@ const config: CodegenConfig = {
         'typescript',
         'typescript-operations',
         'typescript-apollo-angular'
-      ]
+      ],
+      config: { apolloAngularVersion: 2 }
     }
   }
 };

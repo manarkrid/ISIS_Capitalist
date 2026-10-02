@@ -18,7 +18,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      typePaths: ['./**/*.graphql'],
+      typePaths: ['./src/schema.graphql'],
       definitions: {
         path: join(process.cwd(), 'src/graphql.ts'),
         outputAs: 'class',

@@ -1,18 +1,11 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body {
-  height: 100%;
-  background: #050d1a;
-  color: #e0e8ff;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Scrollbars sombres */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0a1a35; }
-::-webkit-scrollbar-thumb { background: #2a5aaa; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4a8aff; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { min-height: 100%; background: #f6f4ec; }
+body { min-height: 100%; color: #253d44; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; }
+button, input { font: inherit; }
+button { cursor: pointer; transition: background-color .15s, border-color .15s; }
+button:disabled { cursor: not-allowed; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #d99a48; outline-offset: 3px; }
+img { display: block; max-width: 100%; }
+sup { font-size: .62em; }
+::selection { color: #fff; background: #276078; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; } }

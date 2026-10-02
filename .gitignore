@@ -1,1 +1,4 @@
 backend/.npm-cache/
+.DS_Store
+backend/userworlds/*-world.json
+backend/userworlds/*.tmp

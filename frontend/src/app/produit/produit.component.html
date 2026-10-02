@@ -1,54 +1,26 @@
-﻿<div class="product-card" [class.locked]="(prod()?.quantite ?? 0) === 0 && !canBuy()">
-
-  <!-- Image cliquable pour lancer la production -->
-  <div class="icon-area" (click)="startFabrication()" [title]="'Lancer la production de ' + prod()?.name">
-    <div class="icon-wrapper">
-      <img
-        class="round prod-img"
-        [src]="gameService.server() + '/' + prod()?.logo"
-        [alt]="prod()?.name"
-        (error)="$any($event.target).src='placeholder.svg'"
-      />
-      <span class="qty-badge">{{ prod()?.quantite }}</span>
-    </div>
-  </div>
-
-  <!-- Contenu -->
-  <div class="content-area">
-    <div class="product-header">
-      <span class="product-name">{{ prod()?.name }}</span>
-      <span class="product-revenue">
-        <span [innerHTML]="(prod()?.revenu ?? 0) * (prod()?.quantite ?? 0) | bigvalue"></span> $
-      </span>
-    </div>
-
-    <!-- Barre de progression -->
-    <div class="progressbar">
-      <div class="fill" [style.width.%]="progress()"></div>
-    </div>
-    <div class="timeleft-display">
-      @if (timeleft() > 0) {
-        {{ timeleft() | second }}
-      } @else if ((prod()?.quantite ?? 0) === 0) {
-        <span class="locked-msg">Achetez pour debloquer</span>
-      } @else {
-        <span class="ready-msg">Cliquez sur l'image pour produire</span>
-      }
-    </div>
-
-    <!-- Bouton achat -->
-    <button
-      class="buy-btn"
-      [class.can-buy]="canBuy()"
-      [disabled]="!canBuy()"
-      (click)="buy()"
-      [title]="canBuy() ? 'Acheter ' + numberToBuy() + ' unites' : 'Pas assez d argent'"
-    >
-      <span class="buy-qty">x{{ numberToBuy() }}</span>
-      <span class="buy-label">Acheter</span>
-      <span class="buy-cost" [innerHTML]="costToBuy() | bigvalue"></span>
-      <span class="buy-cost-sym">$</span>
+@if (prod(); as product) {
+  <article class="product-card" [class.locked]="product.quantite === 0" [class.producing]="timeleft() > 0">
+    <button class="icon-area" (click)="startFabrication()" [disabled]="!canProduce()" [attr.aria-label]="'Lancer la production de ' + product.name" [title]="product.quantite === 0 ? 'Achetez cette spécialité pour produire' : product.managerUnlocked ? 'Production automatique' : timeleft() > 0 ? 'Production en cours' : 'Lancer la production'">
+      <img class="prod-img" [src]="gameService.imageUrl(product.logo)" [alt]="product.name" (error)="imageFallback($event)" />
+      <span class="image-action" aria-hidden="true">{{ product.quantite === 0 ? 'À découvrir' : product.managerUnlocked ? 'Automatique' : timeleft() > 0 ? 'En cuisine…' : '▶ Produire' }}</span>
     </button>
-  </div>
-
-</div>
+    <div class="content-area">
+      <div class="product-header"><h3>{{ product.name }}</h3><span class="quantity" [attr.aria-label]="product.quantite + ' possédés'">×{{ product.quantite }}</span></div>
+      <div class="production-info"><span>{{ product.managerUnlocked ? 'Manager en service' : 'Production manuelle' }}</span><span>{{ vitesse() | second }} / cycle</span></div>
+      <div class="progressbar" role="progressbar" [attr.aria-label]="'Production de ' + product.name" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progress()">
+        <div class="fill" [style.width.%]="progress()"></div>
+        <span class="product-revenue"><span [innerHTML]="productionRevenue() | bigvalue"></span> DT / cycle</span>
+      </div>
+      <div class="timeleft-display">
+        @if (timeleft() > 0) { <span>En préparation</span><strong>{{ timeleft() | second }}</strong> }
+        @else if (product.quantite === 0) { <span>Achetez pour ouvrir cette cuisine</span> }
+        @else { <span>Prêt à cuisiner</span><span>Cliquez sur le plat</span> }
+      </div>
+      <button class="buy-btn" [disabled]="!canBuy()" (click)="buy()" [title]="numberToBuy() === 0 ? 'Pas assez d’argent pour acheter une unité' : 'Acheter ' + numberToBuy() + ' unités de ' + product.name">
+        <span class="buy-label">Acheter <strong>×{{ numberToBuy() }}</strong></span>
+        @if (numberToBuy() > 0) { <span class="buy-cost"><span [innerHTML]="costToBuy() | bigvalue"></span> <small>DT</small></span> }
+        @else { <span class="buy-cost">Fonds insuffisants</span> }
+      </button>
+    </div>
+  </article>
+}

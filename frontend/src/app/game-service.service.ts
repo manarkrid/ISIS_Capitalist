@@ -1,236 +1,316 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
+import { firstValueFrom, timeout } from 'rxjs';
 import {
-  World, Product, Palier, RatioType,
-  GetWorldGQL,
-  AcheterQtProduitGQL,
-  LancerProductionGQL,
-  EngagerManagerGQL,
-  AcheterCashUpgradeGQL,
-  AcheterAngelUpgradeGQL,
-  ResetWorldGQL,
+  World, Product, Palier, RatioType, GetWorldGQL, AcheterQtProduitGQL,
+  LancerProductionProduitGQL, EngagerManagerGQL, AcheterCashUpgradeGQL,
+  AcheterAngelUpgradeGQL, ResetWorldGQL,
 } from './graphql/generated';
+import { GAME_SERVER_URL } from './game.config';
 
 @Injectable({ providedIn: 'root' })
-export class GameServiceService {
-
-  private getWorldGQL     = inject(GetWorldGQL);
-  private acheterQtGQL    = inject(AcheterQtProduitGQL);
-  private lancerProdGQL   = inject(LancerProductionGQL);
-  private engagerMgrGQL   = inject(EngagerManagerGQL);
-  private cashUpgradeGQL  = inject(AcheterCashUpgradeGQL);
+export class GameServiceService implements OnDestroy {
+  private getWorldGQL = inject(GetWorldGQL);
+  private acheterQtGQL = inject(AcheterQtProduitGQL);
+  private lancerProdGQL = inject(LancerProductionProduitGQL);
+  private engagerMgrGQL = inject(EngagerManagerGQL);
+  private cashUpgradeGQL = inject(AcheterCashUpgradeGQL);
   private angelUpgradeGQL = inject(AcheterAngelUpgradeGQL);
-  private resetWorldGQL   = inject(ResetWorldGQL);
+  private resetWorldGQL = inject(ResetWorldGQL);
 
-  server       = signal<string>('http://localhost:3000');
-  user         = signal<string>('');
-  world        = signal<World | null>(null);
-  snackmessage = signal<string>('');
+  readonly server = signal(GAME_SERVER_URL);
+  readonly user = signal('');
+  readonly world = signal<World | null>(null);
+  readonly snackmessage = signal('');
+  readonly loading = signal(false);
+  readonly busy = signal(false);
+  readonly error = signal<string | null>(null);
+
+  private session = 0;
+  private readSequence = 0;
+  private lastTick = Date.now();
+  private timer: ReturnType<typeof setInterval>;
+  private onVisibilityChange = () => {
+    if (document.visibilityState === 'visible') void this.refreshWorld();
+  };
 
   constructor() {
-    let username = localStorage.getItem('username');
-    if (!username || username === '') {
-      username = 'Captain' + Math.floor(Math.random() * 10000);
-    }
+    let username: string | null = null;
+    try { username = localStorage.getItem('username')?.trim() ?? null; } catch { /* Stockage désactivé. */ }
+    username ||= 'Chef' + Math.floor(Math.random() * 100000);
     this.user.set(username);
-    this.readWorld();
+    this.persistUsername(username);
+    void this.loadWorld();
+
+    // Une seule horloge calcule les gains et la progression de tous les produits.
+    // Date.now permet de rattraper les cycles d'un onglet en arrière-plan.
+    this.timer = setInterval(() => this.advanceProductions(), 50);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
-  // ── Lecture du monde ───────────────────────────────────────────────────────
-  readWorld() {
-    this.getWorldGQL.fetch({ variables: { user: this.user() }, fetchPolicy: 'no-cache' }).subscribe({
-      next: (result: any) => {
-        const data = result?.data ?? result;
-        const w = data?.getWorld;
-        if (w) {
-          this.world.set(this.deepCopy(w));
-        }
-      },
-      error: (err: any) => console.error('getWorld error:', err),
-    });
+  ngOnDestroy(): void {
+    clearInterval(this.timer);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    this.session++;
   }
 
-  refreshWorld() { this.readWorld(); }
-
-  commitName(name: string) {
-    localStorage.setItem('username', name);
-    this.user.set(name);
-    this.readWorld();
+  imageUrl(logo: string | null | undefined): string {
+    if (!logo) return 'placeholder.svg';
+    if (/^https?:\/\//i.test(logo)) return logo;
+    return `${this.server().replace(/\/+$/, '')}/${logo.replace(/^\/+/, '')}`;
   }
 
-  // ── Gain de production local ────────────────────────────────────────────────
-  productionDone(prod: Product, qt: number) {
-    const angelMultiplier = 1 + ((this.world()?.activeangels ?? 0) * (this.world()?.angelbonus ?? 2)) / 100;
-    const gain = prod.revenu * prod.quantite * qt * angelMultiplier;
-    this.world.update((w) => {
-      if (!w) return w;
-      return { ...w, money: w.money + gain, score: w.score + gain };
-    });
+  async readWorld(): Promise<void> { await this.refreshWorld(); }
+
+  async refreshWorld(): Promise<void> {
+    if (this.busy() || this.loading()) return;
+    await this.loadWorld();
   }
 
-  // ── Achat produit ──────────────────────────────────────────────────────────
-  buyProduct(qt: number, product: Product) {
-    const world = this.world();
-    if (!world) return;
-
-    const cost = qt === 1
-      ? product.cout
-      : product.cout * (Math.pow(product.croissance, qt) - 1) / (product.croissance - 1);
-
-    if (world.money < cost) return;
-
-    const newWorld: World = this.deepCopy(world);
-    const newProd = newWorld.products.find((p) => p.id === product.id)!;
-    newProd.quantite += qt;
-    newProd.cout      = product.cout * Math.pow(product.croissance, qt);
-    newWorld.money   -= cost;
-
-    this.applyPaliersForProduct(newWorld, newProd);
-    this.applyAllUnlocks(newWorld);
-    this.world.set(newWorld);
-
-    this.acheterQtGQL.mutate({ variables: { user: this.user(), id: product.id, quantite: qt } }).subscribe({
-      error: () => this.snackmessage.set('Erreur serveur achat produit'),
-    });
-  }
-
-  // ── Lancer production ──────────────────────────────────────────────────────
-  lancerProduction(productId: number) {
-    this.lancerProdGQL.mutate({ variables: { user: this.user(), id: productId } }).subscribe({
-      error: () => this.snackmessage.set('Erreur serveur lancer production'),
-    });
-  }
-
-  // ── Engager manager ────────────────────────────────────────────────────────
-  hireManager(manager: Palier) {
-    const world = this.world();
-    if (!world) return;
-    if (world.money < manager.seuil) {
-      this.snackmessage.set("Pas assez d'argent pour ce manager");
+  commitName(name: string): void {
+    const username = name.trim();
+    if (!/^[\p{L}\p{N} _-]{1,40}$/u.test(username)) {
+      this.snackmessage.set('Pseudo : 1 à 40 lettres, chiffres, espaces, tirets ou underscores.');
       return;
     }
-    const newWorld: World = this.deepCopy(world);
-    newWorld.money -= manager.seuil;
-    const mgr = newWorld.managers.find((m) => m.name === manager.name);
-    if (mgr) mgr.unlocked = true;
-    const prod = newWorld.products.find((p) => p.id === manager.idcible);
-    if (prod) {
-      prod.managerUnlocked = true;
-      if (prod.timeleft === 0) prod.timeleft = prod.vitesse;
-    }
-    this.world.set(newWorld);
-    this.snackmessage.set(`Manager ${manager.name} engagé !`);
-
-    this.engagerMgrGQL.mutate({ variables: { user: this.user(), name: manager.name } }).subscribe({
-      error: () => this.snackmessage.set('Erreur serveur manager'),
-    });
+    if (username === this.user()) { void this.refreshWorld(); return; }
+    // Une réponse en vol de l'ancien joueur ne doit pas modifier le nouveau.
+    this.session++;
+    this.busy.set(false);
+    this.world.set(null);
+    this.user.set(username);
+    this.persistUsername(username);
+    void this.loadWorld();
   }
 
-  // ── Cash upgrade ───────────────────────────────────────────────────────────
-  buyCashUpgrade(upgrade: Palier) {
+  private persistUsername(username: string): void {
+    try { localStorage.setItem('username', username); } catch { /* Le jeu reste utilisable. */ }
+  }
+
+  private async loadWorld(): Promise<boolean> {
+    const session = this.session;
+    const sequence = ++this.readSequence;
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const result = await firstValueFrom(this.getWorldGQL.fetch(
+        { user: this.user() }, { fetchPolicy: 'no-cache' },
+      ).pipe(timeout(10000)));
+      if (session !== this.session || sequence !== this.readSequence) return false;
+      if (!result.data?.getWorld) throw new Error('Monde absent de la réponse');
+      this.world.set(this.deepCopy(result.data.getWorld));
+      this.lastTick = Date.now();
+      return true;
+    } catch {
+      if (session === this.session && sequence === this.readSequence) {
+        this.world.set(null);
+        this.error.set('Connexion au serveur impossible. Vérifiez que le backend est démarré, puis réessayez.');
+      }
+      return false;
+    } finally {
+      if (session === this.session && sequence === this.readSequence) this.loading.set(false);
+    }
+  }
+
+  private canAct(): boolean {
+    return !!this.world() && !this.busy() && !this.loading();
+  }
+
+  private async performAction(
+    request: () => Promise<boolean>, apply: (world: World) => void, message: string,
+  ): Promise<boolean> {
+    if (!this.canAct()) return false;
+    const session = this.session;
+    this.busy.set(true);
+    try {
+      if (!await request()) throw new Error('Action refusée');
+      if (session !== this.session) return false;
+      // Les changements sont affichés après confirmation du serveur.
+      this.advanceProductions();
+      const world = this.deepCopy(this.world()!);
+      apply(world);
+      this.world.set(world);
+      if (message) this.snackmessage.set(message);
+      // Le serveur reste la référence pour le temps écoulé pendant la requête.
+      return await this.loadWorld();
+    } catch {
+      if (session === this.session) {
+        await this.loadWorld();
+        this.snackmessage.set('Action non confirmée. Vérifiez votre connexion et le solde disponible, puis réessayez.');
+      }
+      return false;
+    } finally {
+      if (session === this.session) this.busy.set(false);
+    }
+  }
+
+  productRevenue(product: Product): number {
     const world = this.world();
-    if (!world || upgrade.unlocked || world.money < upgrade.seuil) {
-      this.snackmessage.set("Pas assez d'argent");
-      return;
-    }
-    const newWorld: World = this.deepCopy(world);
-    newWorld.money -= upgrade.seuil;
-    const u = newWorld.upgrades.find((x) => x.name === upgrade.name)!;
-    u.unlocked = true;
-    this.applyBonusToWorld(newWorld, u);
-    this.world.set(newWorld);
-    this.snackmessage.set(`Upgrade "${upgrade.name}" acheté !`);
-
-    this.cashUpgradeGQL.mutate({ variables: { user: this.user(), name: upgrade.name } }).subscribe({
-      error: () => this.snackmessage.set('Erreur serveur upgrade'),
-    });
+    return product.revenu * product.quantite * (1 + (world?.activeangels ?? 0) * (world?.angelbonus ?? 2) / 100);
   }
 
-  // ── Angel upgrade ──────────────────────────────────────────────────────────
-  buyAngelUpgrade(upgrade: Palier) {
+  advanceProductions(now = Date.now()): void {
+    const elapsed = Math.max(0, now - this.lastTick);
+    this.lastTick = now;
     const world = this.world();
-    if (!world || upgrade.unlocked || world.activeangels < upgrade.seuil) {
-      this.snackmessage.set("Pas assez d'anges actifs");
-      return;
-    }
-    const newWorld: World = this.deepCopy(world);
-    newWorld.activeangels -= upgrade.seuil;
-    const u = newWorld.angelupgrades.find((x) => x.name === upgrade.name)!;
-    u.unlocked = true;
-    this.applyBonusToWorld(newWorld, u);
-    this.world.set(newWorld);
-    this.snackmessage.set(`Angel upgrade "${upgrade.name}" acheté !`);
-
-    this.angelUpgradeGQL.mutate({ variables: { user: this.user(), name: upgrade.name } }).subscribe({
-      error: () => this.snackmessage.set('Erreur serveur angel upgrade'),
+    if (!world || !elapsed) return;
+    let gain = 0;
+    let changed = false;
+    const multiplier = 1 + world.activeangels * world.angelbonus / 100;
+    const products = world.products.map((product) => {
+      if (product.quantite <= 0 || (!product.managerUnlocked && product.timeleft <= 0)) return product;
+      const duration = Math.max(1, product.vitesse);
+      const remaining = product.timeleft > 0 ? product.timeleft : duration;
+      let cycles = 0;
+      let timeleft = remaining - elapsed;
+      if (timeleft <= 0) {
+        cycles = product.managerUnlocked ? 1 + Math.floor(-timeleft / duration) : 1;
+        timeleft = product.managerUnlocked ? duration - (-timeleft % duration) : 0;
+      }
+      gain += cycles * product.revenu * product.quantite * multiplier;
+      changed = true;
+      return { ...product, timeleft };
     });
+    if (changed) this.world.set({ ...world, products, money: world.money + gain, score: world.score + gain });
   }
 
-  // ── Reset world ────────────────────────────────────────────────────────────
-  resetWorld() {
-    this.resetWorldGQL.mutate({ variables: { user: this.user() } }).subscribe({
-      next: () => {
-        this.snackmessage.set('Partie remise à zéro ! Anges récupérés.');
-        this.readWorld();
-      },
-      error: () => this.snackmessage.set('Erreur serveur reset'),
-    });
+  productionCost(product: Product, quantity: number): number {
+    if (!Number.isInteger(quantity) || quantity <= 0) return 0;
+    if (quantity === 1) return product.cout;
+    if (product.croissance === 1) return product.cout * quantity;
+    return product.cout * (Math.pow(product.croissance, quantity) - 1) / (product.croissance - 1);
   }
 
-  // ── Calcul anges gagnés ────────────────────────────────────────────────────
-  computeNewAngels(): number {
-    const w = this.world();
-    if (!w) return 0;
-    return Math.max(0, Math.floor(Math.sqrt(w.score / 1000)) - w.totalangels);
-  }
-
-  // ── maxCanBuy ──────────────────────────────────────────────────────────────
   maxCanBuy(product: Product): number {
     const money = this.world()?.money ?? 0;
-    if (money < product.cout) return 0;
-    const c = product.croissance;
-    return Math.floor(Math.log(1 + money * (c - 1) / product.cout) / Math.log(c));
+    if (product.cout <= 0 || money < product.cout || product.croissance < 1) return 0;
+    let quantity = product.croissance === 1
+      ? Math.floor(money / product.cout)
+      : Math.floor(Math.log1p(money * (product.croissance - 1) / product.cout) / Math.log(product.croissance));
+    quantity = Math.min(2147483647 - product.quantite, Math.max(0, quantity));
+    // Corrige les arrondis au voisinage d'une quantité entière.
+    if (quantity > 0 && this.productionCost(product, quantity) > money) quantity--;
+    if (quantity < 2147483647 - product.quantite && this.productionCost(product, quantity + 1) <= money) quantity++;
+    return quantity;
   }
 
-  // ── Application des bonus ──────────────────────────────────────────────────
+  async buyProduct(quantity: number, product: Product): Promise<boolean> {
+    const current = this.world()?.products.find((p) => p.id === product.id);
+    if (!current || !Number.isInteger(quantity) || quantity <= 0 || quantity > this.maxCanBuy(current)) return false;
+    const cost = this.productionCost(current, quantity);
+    return this.performAction(
+      async () => !!(await firstValueFrom(this.acheterQtGQL.mutate({ user: this.user(), id: current.id, quantite: quantity }).pipe(timeout(10000)))).data?.acheterQtProduit,
+      (world) => {
+        const target = world.products.find((p) => p.id === current.id)!;
+        world.money = Math.max(0, world.money - cost);
+        target.quantite += quantity;
+        target.cout *= Math.pow(target.croissance, quantity);
+        this.applyPaliersForProduct(world, target);
+        this.applyAllUnlocks(world);
+      }, '',
+    );
+  }
+
+  async lancerProduction(productId: number): Promise<boolean> {
+    const product = this.world()?.products.find((p) => p.id === productId);
+    if (!product || product.quantite <= 0 || product.timeleft > 0 || product.managerUnlocked) return false;
+    return this.performAction(
+      async () => !!(await firstValueFrom(this.lancerProdGQL.mutate({ user: this.user(), id: productId }).pipe(timeout(10000)))).data?.lancerProductionProduit,
+      (world) => { const target = world.products.find((p) => p.id === productId)!; target.timeleft = target.vitesse; }, '',
+    );
+  }
+
+  async hireManager(manager: Palier): Promise<boolean> {
+    const current = this.world()?.managers.find((m) => m.name === manager.name);
+    if (!current || current.unlocked || this.world()!.money < current.seuil) return false;
+    return this.performAction(
+      async () => !!(await firstValueFrom(this.engagerMgrGQL.mutate({ user: this.user(), name: current.name }).pipe(timeout(10000)))).data?.engagerManager,
+      (world) => {
+        world.money = Math.max(0, world.money - current.seuil);
+        world.managers.find((m) => m.name === current.name)!.unlocked = true;
+        const product = world.products.find((p) => p.id === current.idcible)!;
+        product.managerUnlocked = true;
+        if (product.timeleft <= 0 && product.quantite > 0) product.timeleft = product.vitesse;
+      }, `Manager ${current.name} engagé !`,
+    );
+  }
+
+  async buyCashUpgrade(upgrade: Palier): Promise<boolean> {
+    const current = this.world()?.upgrades.find((u) => u.name === upgrade.name);
+    if (!current || current.unlocked || this.world()!.money < current.seuil) return false;
+    return this.performAction(
+      async () => !!(await firstValueFrom(this.cashUpgradeGQL.mutate({ user: this.user(), name: current.name }).pipe(timeout(10000)))).data?.acheterCashUpgrade,
+      (world) => {
+        world.money = Math.max(0, world.money - current.seuil);
+        const target = world.upgrades.find((u) => u.name === current.name)!;
+        target.unlocked = true;
+        this.applyBonusToWorld(world, target);
+      }, `Amélioration « ${current.name} » achetée !`,
+    );
+  }
+
+  async buyAngelUpgrade(upgrade: Palier): Promise<boolean> {
+    const current = this.world()?.angelupgrades.find((u) => u.name === upgrade.name);
+    if (!current || current.unlocked || this.world()!.activeangels < current.seuil) return false;
+    return this.performAction(
+      async () => !!(await firstValueFrom(this.angelUpgradeGQL.mutate({ user: this.user(), name: current.name }).pipe(timeout(10000)))).data?.acheterAngelUpgrade,
+      (world) => {
+        world.activeangels -= current.seuil;
+        const target = world.angelupgrades.find((u) => u.name === current.name)!;
+        target.unlocked = true;
+        this.applyBonusToWorld(world, target);
+      }, `Amélioration angélique « ${current.name} » achetée !`,
+    );
+  }
+
+  async resetWorld(): Promise<boolean> {
+    return this.performAction(
+      async () => !!(await firstValueFrom(this.resetWorldGQL.mutate({ user: this.user() }).pipe(timeout(10000)))).data?.resetWorld,
+      () => {}, 'Partie remise à zéro ! Les nouveaux anges sont actifs.',
+    );
+  }
+
+  computeNewAngels(): number {
+    const world = this.world();
+    return world ? Math.max(0, Math.floor(150 * Math.sqrt(world.score / 1e15)) - world.totalangels) : 0;
+  }
+
   applyPaliersForProduct(world: World, product: Product): void {
     for (const palier of product.paliers) {
       if (!palier.unlocked && product.quantite >= palier.seuil) {
         palier.unlocked = true;
         this.applyBonusToWorld(world, palier);
-        this.snackmessage.set(`Unlock "${palier.name}" débloqué !`);
+        this.snackmessage.set(`Palier « ${palier.name} » débloqué !`);
       }
     }
   }
 
   applyAllUnlocks(world: World): void {
     for (const palier of world.allunlocks) {
-      if (!palier.unlocked && world.products.every((p) => p.quantite >= palier.seuil)) {
+      if (!palier.unlocked && world.products.length > 0 && world.products.every((p) => p.quantite >= palier.seuil)) {
         palier.unlocked = true;
         this.applyBonusToWorld(world, palier);
-        this.snackmessage.set(`All-unlock "${palier.name}" débloqué !`);
+        this.snackmessage.set(`Palier global « ${palier.name} » débloqué !`);
       }
     }
   }
 
   applyBonusToWorld(world: World, palier: Palier): void {
-    if (palier.typeratio === RatioType.Vitesse) {
-      const p = world.products.find((p) => p.id === palier.idcible);
-      if (p) p.vitesse = Math.max(100, Math.floor(p.vitesse / palier.ratio));
-    } else if (palier.typeratio === RatioType.Gain) {
-      if (palier.idcible === 0) {
-        world.products.forEach((p) => { p.revenu *= palier.ratio; });
-      } else if (palier.idcible === -1) {
-        world.angelbonus *= palier.ratio;
-      } else {
-        const p = world.products.find((p) => p.id === palier.idcible);
-        if (p) p.revenu *= palier.ratio;
+    if (palier.typeratio === RatioType.Ange) {
+      world.angelbonus += palier.ratio;
+      return;
+    }
+    for (const product of world.products) {
+      if (palier.idcible !== 0 && product.id !== palier.idcible) continue;
+      if (palier.typeratio === RatioType.Gain) product.revenu *= palier.ratio;
+      if (palier.typeratio === RatioType.Vitesse) {
+        const previousDuration = product.vitesse;
+        product.vitesse = Math.max(1, Math.floor(previousDuration / palier.ratio));
+        if (product.timeleft > 0) {
+          product.timeleft = Math.max(1, Math.ceil(product.timeleft * product.vitesse / previousDuration));
+        }
       }
-    } else if (palier.typeratio === RatioType.Ange) {
-      world.angelbonus *= palier.ratio;
     }
   }
 
-  private deepCopy<T>(obj: T): T {
-    return JSON.parse(JSON.stringify(obj));
-  }
+  private deepCopy<T>(object: T): T { return JSON.parse(JSON.stringify(object)); }
 }

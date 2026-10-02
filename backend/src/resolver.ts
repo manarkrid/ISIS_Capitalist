@@ -1,192 +1,138 @@
+import { Inject } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AppService } from './app.service.js';
-import { origworld } from './origworld.js';
+import { Palier, Product, World } from './graphql.js';
 
 @Resolver('World')
 export class GraphQlResolver {
-  constructor(private service: AppService) {}
+  constructor(@Inject(AppService) private readonly service: AppService) {}
 
   @Query()
-  async getWorld(@Args('user') user: string) {
-    const world = this.service.readUserWorld(user);
-    const updated = this.service.updateWorld(world);
-    this.service.saveWorld(user, updated);
-    return updated;
+  getWorld(@Args('user') user: string): World {
+    const world = this.loadWorld(user);
+    this.service.saveWorld(user, world);
+    return world;
+  }
+
+  private loadWorld(user: string): World {
+    return this.service.updateWorld(this.service.readUserWorld(user));
   }
 
   @Mutation()
-  async acheterQtProduit(
+  acheterQtProduit(
     @Args('user') user: string,
     @Args('id') id: number,
     @Args('quantite') quantite: number,
-  ) {
-    const world = this.service.readUserWorld(user);
-    this.service.updateWorld(world);
-
-    const product = world.products.find((p: any) => p.id === id);
-    if (!product) {
-      throw new Error(`Le produit avec l'id ${id} n'existe pas`);
+  ): Product {
+    const world = this.loadWorld(user);
+    const product = this.service.product(world, id);
+    const cost = this.service.purchaseCost(product, quantite);
+    if (world.money < cost) {
+      throw new Error("Pas assez d'argent pour acheter cette quantité.");
     }
-
-    // Calcul du coût total pour acheter `quantite` unités
-    // cout courant = cout * croissance^quantite_actuelle ... mais on simplifie :
-    // coût de n unités = cout * (croissance^n - 1) / (croissance - 1)
-    let totalCost = 0;
-    for (let i = 0; i < quantite; i++) {
-      totalCost +=
-        product.cout * Math.pow(product.croissance, product.quantite + i);
-    }
-    // On utilise le cout stocké qui représente le prochain achat
-    // cout stocké = cout_base * croissance^quantite
-    // Pour n achats : sum = cout_stocke * (croissance^n - 1) / (croissance - 1)
-    const coutActuel = product.cout;
-    let coutTotal: number;
-    if (quantite === 1) {
-      coutTotal = coutActuel;
-    } else {
-      coutTotal =
-        (coutActuel * (Math.pow(product.croissance, quantite) - 1)) /
-        (product.croissance - 1);
-    }
-
-    world.money -= coutTotal;
-
+    world.money -= cost;
     product.quantite += quantite;
-
-    // Mise à jour du cout pour le prochain achat
-    product.cout = coutActuel * Math.pow(product.croissance, quantite);
-
-    // Vérification des paliers produit
+    product.cout *= Math.pow(product.croissance, quantite);
+    if (product.managerUnlocked && product.timeleft === 0) {
+      product.timeleft = product.vitesse;
+    }
     this.service.checkProductPaliers(world, product);
-
-    // Vérification des allunlocks
     this.service.checkAllUnlocks(world);
-
     this.service.saveWorld(user, world);
     return product;
   }
 
   @Mutation()
-  async lancerProductionProduit(
+  lancerProductionProduit(
     @Args('user') user: string,
     @Args('id') id: number,
-  ) {
-    const world = this.service.readUserWorld(user);
-    this.service.updateWorld(world);
-
-    const product = world.products.find((p: any) => p.id === id);
-    if (!product) {
-      throw new Error(`Le produit avec l'id ${id} n'existe pas`);
+  ): Product {
+    const world = this.loadWorld(user);
+    const product = this.service.product(world, id);
+    if (product.quantite === 0) {
+      throw new Error('Achetez au moins un exemplaire avant de produire.');
     }
-
+    if (product.timeleft > 0) {
+      throw new Error('La production est déjà en cours.');
+    }
     product.timeleft = product.vitesse;
-
     this.service.saveWorld(user, world);
     return product;
   }
 
   @Mutation()
-  async engagerManager(
+  engagerManager(
     @Args('user') user: string,
     @Args('name') name: string,
-  ) {
-    const world = this.service.readUserWorld(user);
-    this.service.updateWorld(world);
-
-    const manager = world.managers.find((m: any) => m.name === name);
-    if (!manager) {
-      throw new Error(`Le manager "${name}" n'existe pas`);
-    }
-
+  ): Palier {
+    const world = this.loadWorld(user);
+    const manager = this.availablePalier(world.managers, name);
+    const product = this.service.product(world, manager.idcible);
     if (world.money < manager.seuil) {
-      throw new Error(`Pas assez d'argent pour engager ce manager`);
+      throw new Error("Pas assez d'argent pour engager ce manager.");
     }
-
     world.money -= manager.seuil;
-
-    const product = world.products.find((p: any) => p.id === manager.idcible);
-    if (product) {
-      product.managerUnlocked = true;
-      if (product.timeleft === 0) {
-        product.timeleft = product.vitesse;
-      }
+    product.managerUnlocked = true;
+    if (product.quantite > 0 && product.timeleft === 0) {
+      product.timeleft = product.vitesse;
     }
     manager.unlocked = true;
-
     this.service.saveWorld(user, world);
     return manager;
   }
 
+  private availablePalier(paliers: Palier[], name: string): Palier {
+    const palier = paliers.find((item) => item.name === name);
+    if (!palier) throw new Error(`Le bonus ou manager « ${name} » n'existe pas.`);
+    if (palier.unlocked) throw new Error(`« ${name} » est déjà débloqué.`);
+    return palier;
+  }
+
   @Mutation()
-  async acheterCashUpgrade(
+  acheterCashUpgrade(
     @Args('user') user: string,
     @Args('name') name: string,
-  ) {
-    const world = this.service.readUserWorld(user);
-    this.service.updateWorld(world);
-
-    const upgrade = world.upgrades.find((u: any) => u.name === name);
-    if (!upgrade) {
-      throw new Error(`L'upgrade "${name}" n'existe pas`);
-    }
-    if (upgrade.unlocked) {
-      throw new Error(`L'upgrade "${name}" est déjà débloquée`);
-    }
+  ): Palier {
+    const world = this.loadWorld(user);
+    const upgrade = this.availablePalier(world.upgrades, name);
     if (world.money < upgrade.seuil) {
-      throw new Error(`Pas assez d'argent pour acheter cet upgrade`);
+      throw new Error("Pas assez d'argent pour acheter cette amélioration.");
     }
-
     world.money -= upgrade.seuil;
-    upgrade.unlocked = true;
     this.service.applyPalierBonus(world, upgrade);
-
+    upgrade.unlocked = true;
     this.service.saveWorld(user, world);
     return upgrade;
   }
 
   @Mutation()
-  async acheterAngelUpgrade(
+  acheterAngelUpgrade(
     @Args('user') user: string,
     @Args('name') name: string,
-  ) {
-    const world = this.service.readUserWorld(user);
-    this.service.updateWorld(world);
-
-    const upgrade = world.angelupgrades.find((u: any) => u.name === name);
-    if (!upgrade) {
-      throw new Error(`L'angel upgrade "${name}" n'existe pas`);
-    }
-    if (upgrade.unlocked) {
-      throw new Error(`L'angel upgrade "${name}" est déjà débloquée`);
-    }
+  ): Palier {
+    const world = this.loadWorld(user);
+    const upgrade = this.availablePalier(world.angelupgrades, name);
     if (world.activeangels < upgrade.seuil) {
-      throw new Error(`Pas assez d'anges actifs pour acheter cet upgrade`);
+      throw new Error("Pas assez d'anges actifs pour acheter cette amélioration.");
     }
-
     world.activeangels -= upgrade.seuil;
-    upgrade.unlocked = true;
     this.service.applyPalierBonus(world, upgrade);
-
+    upgrade.unlocked = true;
     this.service.saveWorld(user, world);
     return upgrade;
   }
 
   @Mutation()
-  async resetWorld(@Args('user') user: string) {
-    const world = this.service.readUserWorld(user);
-    this.service.updateWorld(world);
-
-    // Calcul des anges gagnés cette partie
-    const newAngels = this.service.calculateAngels(world.score);
-
-    // Repart du monde original
-    const fresh = JSON.parse(JSON.stringify(origworld));
-
-    // Conserve le score et cumule les anges
+  resetWorld(@Args('user') user: string): World {
+    const world = this.loadWorld(user);
+    const newAngels = Math.max(
+      0,
+      this.service.calculateAngels(world.score) - world.totalangels,
+    );
+    const fresh = this.service.createWorld();
     fresh.score = world.score;
     fresh.totalangels = world.totalangels + newAngels;
     fresh.activeangels = world.activeangels + newAngels;
-
     this.service.saveWorld(user, fresh);
     return fresh;
   }

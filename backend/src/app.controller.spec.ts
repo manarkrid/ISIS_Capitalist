@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('identifie le serveur du jeu', () => {
+      expect(appController.getHello()).toBe('ISIS Capitalist Backend');
     });
   });
 });
