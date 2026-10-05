@@ -93,7 +93,7 @@ export class GameServiceService implements OnDestroy {
     this.error.set(null);
     try {
       const result = await firstValueFrom(this.getWorldGQL.fetch(
-        { user: this.user() }, { fetchPolicy: 'no-cache' },
+        { variables: { user: this.user() }, fetchPolicy: 'no-cache' },
       ).pipe(timeout(10000)));
       if (session !== this.session || sequence !== this.readSequence) return false;
       if (!result.data?.getWorld) throw new Error('Monde absent de la réponse');
@@ -198,7 +198,9 @@ export class GameServiceService implements OnDestroy {
     if (!current || !Number.isInteger(quantity) || quantity <= 0 || quantity > this.maxCanBuy(current)) return false;
     const cost = this.productionCost(current, quantity);
     return this.performAction(
-      async () => !!(await firstValueFrom(this.acheterQtGQL.mutate({ user: this.user(), id: current.id, quantite: quantity }).pipe(timeout(10000)))).data?.acheterQtProduit,
+      async () => !!(await firstValueFrom(this.acheterQtGQL.mutate({
+        variables: { user: this.user(), id: current.id, quantite: quantity },
+      }).pipe(timeout(10000)))).data?.acheterQtProduit,
       (world) => {
         const target = world.products.find((p) => p.id === current.id)!;
         world.money = Math.max(0, world.money - cost);
@@ -214,7 +216,9 @@ export class GameServiceService implements OnDestroy {
     const product = this.world()?.products.find((p) => p.id === productId);
     if (!product || product.quantite <= 0 || product.timeleft > 0 || product.managerUnlocked) return false;
     return this.performAction(
-      async () => !!(await firstValueFrom(this.lancerProdGQL.mutate({ user: this.user(), id: productId }).pipe(timeout(10000)))).data?.lancerProductionProduit,
+      async () => !!(await firstValueFrom(this.lancerProdGQL.mutate({
+        variables: { user: this.user(), id: productId },
+      }).pipe(timeout(10000)))).data?.lancerProductionProduit,
       (world) => { const target = world.products.find((p) => p.id === productId)!; target.timeleft = target.vitesse; }, '',
     );
   }
@@ -223,7 +227,9 @@ export class GameServiceService implements OnDestroy {
     const current = this.world()?.managers.find((m) => m.name === manager.name);
     if (!current || current.unlocked || this.world()!.money < current.seuil) return false;
     return this.performAction(
-      async () => !!(await firstValueFrom(this.engagerMgrGQL.mutate({ user: this.user(), name: current.name }).pipe(timeout(10000)))).data?.engagerManager,
+      async () => !!(await firstValueFrom(this.engagerMgrGQL.mutate({
+        variables: { user: this.user(), name: current.name },
+      }).pipe(timeout(10000)))).data?.engagerManager,
       (world) => {
         world.money = Math.max(0, world.money - current.seuil);
         world.managers.find((m) => m.name === current.name)!.unlocked = true;
@@ -238,7 +244,9 @@ export class GameServiceService implements OnDestroy {
     const current = this.world()?.upgrades.find((u) => u.name === upgrade.name);
     if (!current || current.unlocked || this.world()!.money < current.seuil) return false;
     return this.performAction(
-      async () => !!(await firstValueFrom(this.cashUpgradeGQL.mutate({ user: this.user(), name: current.name }).pipe(timeout(10000)))).data?.acheterCashUpgrade,
+      async () => !!(await firstValueFrom(this.cashUpgradeGQL.mutate({
+        variables: { user: this.user(), name: current.name },
+      }).pipe(timeout(10000)))).data?.acheterCashUpgrade,
       (world) => {
         world.money = Math.max(0, world.money - current.seuil);
         const target = world.upgrades.find((u) => u.name === current.name)!;
@@ -252,7 +260,9 @@ export class GameServiceService implements OnDestroy {
     const current = this.world()?.angelupgrades.find((u) => u.name === upgrade.name);
     if (!current || current.unlocked || this.world()!.activeangels < current.seuil) return false;
     return this.performAction(
-      async () => !!(await firstValueFrom(this.angelUpgradeGQL.mutate({ user: this.user(), name: current.name }).pipe(timeout(10000)))).data?.acheterAngelUpgrade,
+      async () => !!(await firstValueFrom(this.angelUpgradeGQL.mutate({
+        variables: { user: this.user(), name: current.name },
+      }).pipe(timeout(10000)))).data?.acheterAngelUpgrade,
       (world) => {
         world.activeangels -= current.seuil;
         const target = world.angelupgrades.find((u) => u.name === current.name)!;
@@ -264,7 +274,9 @@ export class GameServiceService implements OnDestroy {
 
   async resetWorld(): Promise<boolean> {
     return this.performAction(
-      async () => !!(await firstValueFrom(this.resetWorldGQL.mutate({ user: this.user() }).pipe(timeout(10000)))).data?.resetWorld,
+      async () => !!(await firstValueFrom(this.resetWorldGQL.mutate({
+        variables: { user: this.user() },
+      }).pipe(timeout(10000)))).data?.resetWorld,
       () => {}, 'Partie remise à zéro ! Les nouveaux anges sont actifs.',
     );
   }

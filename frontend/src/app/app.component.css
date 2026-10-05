@@ -1,6 +1,8 @@
 :host { display: block; }
 .game-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
-.left-panel { display: flex; flex-direction: column; gap: 25px; padding: 32px 22px; color: #fffaf0; background: linear-gradient(180deg, rgba(13, 49, 65, .97) 25%, rgba(13, 49, 65, .86) 64%, rgba(13, 49, 65, .52)), url('/assets/fond.png') center bottom / cover; }
+.left-panel { display: flex; flex-direction: column; gap: 25px; padding: 32px 22px; color: #fffaf0; background:      linear-gradient(180deg, rgba(13, 49, 65, .80) 15%, rgba(13, 49, 65, .62) 55%, rgba(13, 49, 65, .58)),
+    url('/assets/fond.png') center / cover;
+}
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; font-size: 20px; line-height: 1.15; letter-spacing: .3px; }
 .brand img { width: 43px; height: 43px; object-fit: cover; border-radius: 50%; border: 3px solid #fffbf3; }
 .brand strong { font-size: 24px; }
