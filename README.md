@@ -35,6 +35,53 @@ Ouvrir **http://localhost:4200**. L'API GraphQL est disponible sur **http://loca
 
 La partie commence avec **100 DT et un Cookies**, comme dans la base fournie. Les prix, revenus, durées et managers des six produits reprennent le document « Tunisian Capitalist » : Cookies, Fricassé, Makloub, Mechwi, Zgougou et Couscous.
 
+## Partie de démonstration pour la soutenance
+
+Depuis la racine du projet :
+
+```sh
+cd backend
+npm run demo
+```
+
+Dans le jeu, saisir **Soutenance** dans le champ du pseudo et valider. Si cette
+partie est déjà ouverte, cliquer sur **Actualiser la partie** après la commande.
+Le backend et le frontend doivent être démarrés comme indiqué plus haut.
+
+Cette commande crée ou remet à son état de démonstration uniquement la partie
+`Soutenance`. Elle contient **1 milliard de DT**, **150 anges actifs**, un
+score de **4 × 10^15**, **24 Cookies** et **9 exemplaires de chaque autre produit**.
+Les prix correspondent aux quantités possédées. Les managers, paliers et
+améliorations restent à débloquer pendant la présentation. Le score prépare
+**150 nouveaux anges** à réclamer lors du nouveau départ.
+
+Déroulé conseillé (environ 4 minutes) :
+
+1. Produire des Cookies manuellement : montrer la barre et le gain par cycle.
+   Le solde élevé est arrondi à l’écran : les petits gains peuvent ne pas changer
+   sa valeur affichée. Lancer aussi le Couscous, dont le gain sera plus visible.
+2. Acheter un Cookies en mode ×1 : la quantité passe à 25 et le premier palier
+   individuel double son revenu. Acheter un exemplaire de chacune des cinq
+   autres spécialités : le palier global à 10 exemplaires double tous les revenus.
+3. Montrer les modes ×10 puis ×100 sur les Cookies. Engager leur manager et
+   observer plusieurs cycles automatiques.
+4. Acheter une amélioration en DT, puis les améliorations en anges. Montrer les
+   changements de revenus et la diminution du nombre d'anges actifs.
+5. Recharger la page pour montrer la sauvegarde. Pour les gains hors ligne,
+   passer sur un autre onglet pendant quelques secondes puis revenir : le
+   serveur recalcule les cycles du manager.
+6. Montrer le mode Max vers la fin : il dépense presque tout le budget disponible
+   pour le produit choisi. Faire les achats à présenter avant cette étape.
+7. Terminer par **Investisseurs → nouveau départ**, puis confirmer. La partie
+   revient à 100 DT et un Cookies, conserve le score et les anges restants,
+   et reçoit les nouveaux anges. Les anges dépensés ne sont pas récupérés.
+
+Pour rejouer la démonstration, relancer `npm run demo`, puis actualiser la partie.
+Les autres pseudos sont conservés. Les montants de départ se règlent dans
+`backend/scripts/create-demo.mjs` ; ils s'appliquent à la prochaine exécution.
+Les sauvegardes de démonstration sont ignorées par Git, et le script permet de
+les recréer sur une autre machine. `USERWORLDS_DIR` est également respecté.
+
 ## Règles importantes
 
 Le monde contient 6 produits, 6 managers, 3 paliers par produit, 3 paliers globaux, 10 améliorations en dinars et 3 améliorations en anges. Un bonus de vitesse divise la durée de production ; un bonus de gain multiplie le revenu ; un bonus de type `ange` ajoute des points au pourcentage apporté par chaque ange.
@@ -60,7 +107,7 @@ Les anges sont donc une mécanique de progression avancée. Les anges dépensés
 
 Les parties sont stockées dans `backend/userworlds/<pseudo>-world.json`. Les fichiers déjà fournis sont conservés ; les nouvelles sauvegardes sont ignorées par Git. La variable `USERWORLDS_DIR` permet d'utiliser un autre dossier, notamment pour les tests. Le pseudo est un identifiant de partie simple, comme prévu par le sujet ; il ne constitue pas une authentification.
 
-Pour se connecter à un autre monde compatible, modifier uniquement `GAME_SERVER_URL` dans `frontend/src/app/game.config.ts`. Cette adresse sert à la fois aux images et à GraphQL.
+Pour se connecter à un autre monde compatible, saisir son adresse HTTP ou HTTPS dans le champ « Adresse du backend » de la barre latérale, puis valider. Cette adresse est mémorisée dans le navigateur et sert à la fois aux images et à GraphQL. Le multiplicateur global boucle entre ×1, ×10, ×100 et Max. « Actualiser la partie » prend en compte le pseudo saisi.
 
 Le champ `lastupdate` reste une chaîne conformément au schéma du PDF backend ; le serveur l'écrit en date ISO. Les requêtes Angular sont générées depuis ce même schéma, sans avoir besoin d'un serveur démarré :
 

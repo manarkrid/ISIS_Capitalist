@@ -9,6 +9,8 @@ describe('AppComponent', () => {
   let app: AppComponent;
   let service: {
     world: ReturnType<typeof signal<World | null>>;
+    server: ReturnType<typeof signal<string>>;
+    changeServer: jasmine.Spy;
     user: ReturnType<typeof signal<string>>;
     loading: ReturnType<typeof signal<boolean>>;
     busy: ReturnType<typeof signal<boolean>>;
@@ -32,6 +34,7 @@ describe('AppComponent', () => {
           { name: 'Déjà engagé', logo: '', seuil: 10, idcible: 2, ratio: 1, typeratio: RatioType.Gain, unlocked: true },
         ],
       }),
+      server: signal('http://localhost:3000'), changeServer: jasmine.createSpy(),
       user: signal('JoueurTest'), loading: signal(false), busy: signal(false),
       error: signal<string | null>(null), snackmessage: signal(''),
       computeNewAngels: jasmine.createSpy().and.returnValue(5),
@@ -67,6 +70,12 @@ describe('AppComponent', () => {
     expect(retry.textContent).toContain('Réessayer');
     retry.click();
     expect(service.refreshWorld).toHaveBeenCalled();
+  });
+
+  it('boucle les quantités et actualise le pseudo saisi', () => {
+    for (const expected of [10, 100, -1, 1]) { app.cycleQuantity(); expect(app.qtmulti()).toBe(expected); }
+    app.usernameInput.set('Autre joueur'); app.refreshWorld();
+    expect(service.commitName).toHaveBeenCalledWith('Autre joueur');
   });
 
   it('exige une confirmation explicite avant de réinitialiser', async () => {

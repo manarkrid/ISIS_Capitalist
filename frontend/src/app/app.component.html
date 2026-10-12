@@ -22,7 +22,7 @@
       </button>
       <button class="action-btn" (click)="openModal('angels')" [disabled]="!world()" aria-haspopup="dialog">
         <span class="nav-icon" aria-hidden="true">☀</span><span>Investisseurs</span>
-        @if (newAngels() > 0) { <span class="badge">+{{ newAngels() | number:'1.0-0':'fr' }}</span> }
+        @if (newAngels() > 0 && !unavailable()) { <span class="badge">+{{ newAngels() | number:'1.0-0':'fr' }}</span> }
       </button>
       <button class="action-btn" (click)="openModal('angelUpgrades')" [disabled]="!world()" aria-haspopup="dialog">
         <span class="nav-icon" aria-hidden="true">☆</span><span>Bonus des anges</span>
@@ -37,6 +37,13 @@
       </div>
       <p id="player-help">Un pseudo correspond à une partie.</p>
       <button type="button" class="refresh-btn" (click)="refreshWorld()" [disabled]="gameService.loading() || gameService.busy()">↻ Actualiser la partie</button>
+    </form>
+    <form class="player-block server-block" (ngSubmit)="changeServer()">
+      <label for="server-address">Adresse du backend</label>
+      <div class="player-input-row">
+        <input id="server-address" name="serverAddress" type="url" required [ngModel]="serverInput()" (ngModelChange)="serverInput.set($event)" [disabled]="gameService.loading() || gameService.busy()" placeholder="http://localhost:3000" />
+        <button type="submit" class="player-submit" [disabled]="!serverInput().trim() || gameService.loading() || gameService.busy()" aria-label="Se connecter au serveur">→</button>
+      </div>
     </form>
   </aside>
   <main class="right-panel" id="specialites">
@@ -55,7 +62,7 @@
       <div class="products-toolbar">
         <div><h2>Vos spécialités</h2><p>Cliquez sur un plat pour lancer sa production.</p></div>
         <div class="quantity-control" role="group" aria-label="Quantité à acheter">
-          @for (quantity of qtOptions; track quantity) { <button [class.selected]="qtmulti() === quantity" [attr.aria-pressed]="qtmulti() === quantity" (click)="qtmulti.set(quantity)">{{ qtLabels[quantity] }}</button> }
+          <button class="selected" (click)="cycleQuantity()" aria-label="Changer la quantité : fois 1, fois 10, fois 100, maximum">{{ qtLabels[qtmulti()] }} ↻</button>
         </div>
       </div>
       <div class="products-list" [attr.aria-busy]="gameService.loading()">
@@ -120,7 +127,7 @@
           </div>
           @if (resetConfirmation()) {
             <div class="reset-confirmation" role="alert">
-              <h3>Recommencer votre activité ?</h3><p>Votre argent, vos produits, vos managers et vos améliorations seront remis à zéro. Vous conserverez vos anges actifs et gagnerez <strong>{{ newAngels() | number:'1.0-0':'fr' }} anges supplémentaires</strong>.</p>
+              <h3>Recommencer votre activité ?</h3><p>Vos managers et vos améliorations seront remis à zéro. Vous repartirez avec 100 DT et un Cookies pour relancer votre activité. Vous conserverez vos anges actifs et gagnerez <strong>{{ newAngels() | number:'1.0-0':'fr' }} anges supplémentaires</strong>.</p>
               <div class="confirmation-actions"><button class="secondary-btn" [disabled]="gameService.busy()" (click)="resetConfirmation.set(false)">Annuler</button><button class="danger-btn" [disabled]="unavailable()" (click)="doReset()">Confirmer et recommencer</button></div>
             </div>
           } @else {

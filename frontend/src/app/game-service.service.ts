@@ -5,7 +5,7 @@ import {
   LancerProductionProduitGQL, EngagerManagerGQL, AcheterCashUpgradeGQL,
   AcheterAngelUpgradeGQL, ResetWorldGQL,
 } from './graphql/generated';
-import { GAME_SERVER_URL } from './game.config';
+import { getServerUrl, normalizeServerUrl, SERVER_STORAGE_KEY } from './game.config';
 
 @Injectable({ providedIn: 'root' })
 export class GameServiceService implements OnDestroy {
@@ -17,10 +17,10 @@ export class GameServiceService implements OnDestroy {
   private angelUpgradeGQL = inject(AcheterAngelUpgradeGQL);
   private resetWorldGQL = inject(ResetWorldGQL);
 
-  readonly server = signal(GAME_SERVER_URL);
+  readonly server = signal(getServerUrl());
   readonly user = signal('');
   readonly world = signal<World | null>(null);
-  readonly snackmessage = signal('');
+  readonly snackmessage = signal('', { equal: () => false });
   readonly loading = signal(false);
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
@@ -59,6 +59,21 @@ export class GameServiceService implements OnDestroy {
     return `${this.server().replace(/\/+$/, '')}/${logo.replace(/^\/+/, '')}`;
   }
 
+  changeServer(address: string): void {
+    if (this.loading() || this.busy()) return;
+    try {
+      const normalized = normalizeServerUrl(address);
+      localStorage.setItem(SERVER_STORAGE_KEY, normalized);
+      this.session++;
+      this.server.set(normalized);
+      this.world.set(null);
+      this.snackmessage.set('Adresse du serveur mise à jour.');
+      void this.loadWorld();
+    } catch {
+      this.snackmessage.set('Saisissez une adresse HTTP ou HTTPS valide. Le stockage du navigateur doit être accessible.');
+    }
+  }
+
   async readWorld(): Promise<void> { await this.refreshWorld(); }
 
   async refreshWorld(): Promise<void> {
@@ -93,7 +108,7 @@ export class GameServiceService implements OnDestroy {
     this.error.set(null);
     try {
       const result = await firstValueFrom(this.getWorldGQL.fetch(
-        { variables: { user: this.user() }, fetchPolicy: 'no-cache' },
+        { user: this.user() }, { fetchPolicy: 'no-cache' },
       ).pipe(timeout(10000)));
       if (session !== this.session || sequence !== this.readSequence) return false;
       if (!result.data?.getWorld) throw new Error('Monde absent de la réponse');
@@ -104,6 +119,7 @@ export class GameServiceService implements OnDestroy {
       if (session === this.session && sequence === this.readSequence) {
         this.world.set(null);
         this.error.set('Connexion au serveur impossible. Vérifiez que le backend est démarré, puis réessayez.');
+        this.snackmessage.set('Connexion au serveur impossible. Vérifiez son adresse et réessayez.');
       }
       return false;
     } finally {
@@ -199,7 +215,7 @@ export class GameServiceService implements OnDestroy {
     const cost = this.productionCost(current, quantity);
     return this.performAction(
       async () => !!(await firstValueFrom(this.acheterQtGQL.mutate({
-        variables: { user: this.user(), id: current.id, quantite: quantity },
+        user: this.user(), id: current.id, quantite: quantity,
       }).pipe(timeout(10000)))).data?.acheterQtProduit,
       (world) => {
         const target = world.products.find((p) => p.id === current.id)!;
@@ -208,7 +224,7 @@ export class GameServiceService implements OnDestroy {
         target.cout *= Math.pow(target.croissance, quantity);
         this.applyPaliersForProduct(world, target);
         this.applyAllUnlocks(world);
-      }, '',
+      }, `Achat confirmé : ${quantity} × ${current.name}.`,
     );
   }
 
@@ -217,7 +233,7 @@ export class GameServiceService implements OnDestroy {
     if (!product || product.quantite <= 0 || product.timeleft > 0 || product.managerUnlocked) return false;
     return this.performAction(
       async () => !!(await firstValueFrom(this.lancerProdGQL.mutate({
-        variables: { user: this.user(), id: productId },
+        user: this.user(), id: productId,
       }).pipe(timeout(10000)))).data?.lancerProductionProduit,
       (world) => { const target = world.products.find((p) => p.id === productId)!; target.timeleft = target.vitesse; }, '',
     );
@@ -228,7 +244,7 @@ export class GameServiceService implements OnDestroy {
     if (!current || current.unlocked || this.world()!.money < current.seuil) return false;
     return this.performAction(
       async () => !!(await firstValueFrom(this.engagerMgrGQL.mutate({
-        variables: { user: this.user(), name: current.name },
+        user: this.user(), name: current.name,
       }).pipe(timeout(10000)))).data?.engagerManager,
       (world) => {
         world.money = Math.max(0, world.money - current.seuil);
@@ -245,7 +261,7 @@ export class GameServiceService implements OnDestroy {
     if (!current || current.unlocked || this.world()!.money < current.seuil) return false;
     return this.performAction(
       async () => !!(await firstValueFrom(this.cashUpgradeGQL.mutate({
-        variables: { user: this.user(), name: current.name },
+        user: this.user(), name: current.name,
       }).pipe(timeout(10000)))).data?.acheterCashUpgrade,
       (world) => {
         world.money = Math.max(0, world.money - current.seuil);
@@ -261,7 +277,7 @@ export class GameServiceService implements OnDestroy {
     if (!current || current.unlocked || this.world()!.activeangels < current.seuil) return false;
     return this.performAction(
       async () => !!(await firstValueFrom(this.angelUpgradeGQL.mutate({
-        variables: { user: this.user(), name: current.name },
+        user: this.user(), name: current.name,
       }).pipe(timeout(10000)))).data?.acheterAngelUpgrade,
       (world) => {
         world.activeangels -= current.seuil;
@@ -275,7 +291,7 @@ export class GameServiceService implements OnDestroy {
   async resetWorld(): Promise<boolean> {
     return this.performAction(
       async () => !!(await firstValueFrom(this.resetWorldGQL.mutate({
-        variables: { user: this.user() },
+        user: this.user(),
       }).pipe(timeout(10000)))).data?.resetWorld,
       () => {}, 'Partie remise à zéro ! Les nouveaux anges sont actifs.',
     );

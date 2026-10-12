@@ -132,3 +132,5 @@ h1 { color: #173d4e; font-family: Georgia, 'Times New Roman', serif; font-size: 
 @media (prefers-reduced-motion: reduce) { .loader { animation: none; } }
 .modal-snack { display: none; position: sticky; bottom: 0; padding: 13px 24px; background: #153e4f; color: #fff; font-size: 12px; line-height: 1.6; }
 .modal-snack.visible { display: block; }
+
+.server-block { margin-top: 0; padding-top: 0; }

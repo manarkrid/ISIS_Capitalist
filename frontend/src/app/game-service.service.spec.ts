@@ -27,7 +27,7 @@ describe('Synchronisation et règles client', () => {
       { provide: AcheterQtProduitGQL, useValue: { mutate: buy } }, ...providers,
     ] });
   });
-  afterEach(() => { TestBed.resetTestingModule(); });
+  afterEach(() => { localStorage.removeItem('gameServerUrl'); TestBed.resetTestingModule(); });
   function init() { service = TestBed.inject(GameServiceService); flushMicrotasks(); }
 
   it('crédite une seule fois une production manuelle, même après une longue attente', fakeAsync(() => {
@@ -87,6 +87,25 @@ describe('Synchronisation et règles client', () => {
     expect(service.error()).toBeNull(); expect(service.world()).toBeTruthy();
     service.ngOnDestroy();
   }));
+  it('change le serveur pour les requêtes et les images sans accepter une URL invalide', fakeAsync(() => {
+    init();
+    service.changeServer('https://example.com/game/graphql/'); flushMicrotasks();
+    expect(service.server()).toBe('https://example.com/game');
+    expect(localStorage.getItem('gameServerUrl')).toBe('https://example.com/game');
+    expect(service.imageUrl('icones/cookies.jpg')).toBe('https://example.com/game/icones/cookies.jpg');
+    expect(read).toHaveBeenCalledTimes(2);
+    service.changeServer('javascript:alert(1)'); flushMicrotasks();
+    expect(service.server()).toBe('https://example.com/game');
+    expect(read).toHaveBeenCalledTimes(2);
+    service.ngOnDestroy();
+  }));
+
+  it('confirme un achat de produit sans palier', fakeAsync(() => {
+    init(); void service.buyProduct(1, service.world()!.products[0]); flushMicrotasks();
+    expect(service.snackmessage()).toContain('Achat confirmé');
+    service.ngOnDestroy();
+  }));
+
   it('calcule le maximum achetable et les anges selon les formules du sujet', fakeAsync(() => {
     init(); const product: Product = { ...service.world()!.products[0], croissance: 2 };
     service.world.update(w => ({ ...w!, money: 70, score: 1e15, totalangels: 100 }));

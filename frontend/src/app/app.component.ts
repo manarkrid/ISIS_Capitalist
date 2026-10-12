@@ -19,6 +19,7 @@ export class AppComponent implements OnDestroy {
   readonly gameService = inject(GameServiceService);
   readonly world = this.gameService.world;
   readonly usernameInput = signal(this.gameService.user());
+  readonly serverInput = signal(this.gameService.server());
   readonly qtmulti = signal(1);
   readonly qtOptions = [1, 10, 100, -1];
   readonly qtLabels: Record<number, string> = { 1: '×1', 10: '×10', 100: '×100', [-1]: 'Max' };
@@ -42,9 +43,9 @@ export class AppComponent implements OnDestroy {
     }));
     return [...productUnlocks, ...allUnlocks];
   });
-  readonly badgeManagers = computed(() => this.managers().filter(m => (this.world()?.money ?? 0) >= m.seuil).length);
-  readonly badgeUpgrades = computed(() => this.upgrades().filter(u => (this.world()?.money ?? 0) >= u.seuil).length);
-  readonly badgeAngels = computed(() => this.angelUpgrades().filter(u => (this.world()?.activeangels ?? 0) >= u.seuil).length);
+  readonly badgeManagers = computed(() => this.unavailable() ? 0 : this.managers().filter(m => (this.world()?.money ?? 0) >= m.seuil).length);
+  readonly badgeUpgrades = computed(() => this.unavailable() ? 0 : this.upgrades().filter(u => (this.world()?.money ?? 0) >= u.seuil).length);
+  readonly badgeAngels = computed(() => this.unavailable() ? 0 : this.angelUpgrades().filter(u => (this.world()?.activeangels ?? 0) >= u.seuil).length);
   readonly newAngels = computed(() => this.gameService.computeNewAngels());
   readonly unavailable = computed(() => this.gameService.loading() || this.gameService.busy() || !!this.gameService.error());
   readonly snackVisible = signal(false);
@@ -90,7 +91,15 @@ export class AppComponent implements OnDestroy {
     if (!this.resetConfirmation() || this.unavailable()) return;
     if (await this.gameService.resetWorld()) this.closeModal();
   }
-  refreshWorld(): void { this.gameService.refreshWorld(); }
+  refreshWorld(): void {
+    if (this.usernameInput().trim() !== this.gameService.user()) this.commitName();
+    else void this.gameService.refreshWorld();
+  }
+  changeServer(): void { this.closeModal(); this.gameService.changeServer(this.serverInput()); }
+  cycleQuantity(): void {
+    const index = this.qtOptions.indexOf(this.qtmulti());
+    this.qtmulti.set(this.qtOptions[(index + 1) % this.qtOptions.length]);
+  }
   getProdName(id: number): string {
     if (id === 0) return 'Toutes les spécialités';
     if (id === -1) return 'Les anges actifs';
