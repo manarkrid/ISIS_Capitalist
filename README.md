@@ -107,7 +107,7 @@ Les anges sont donc une mécanique de progression avancée. Les anges dépensés
 
 Les parties sont stockées dans `backend/userworlds/<pseudo>-world.json`. Les fichiers déjà fournis sont conservés ; les nouvelles sauvegardes sont ignorées par Git. La variable `USERWORLDS_DIR` permet d'utiliser un autre dossier, notamment pour les tests. Le pseudo est un identifiant de partie simple, comme prévu par le sujet ; il ne constitue pas une authentification.
 
-Pour se connecter à un autre monde compatible, saisir son adresse HTTP ou HTTPS dans le champ « Adresse du backend » de la barre latérale, puis valider. Cette adresse est mémorisée dans le navigateur et sert à la fois aux images et à GraphQL. Le multiplicateur global boucle entre ×1, ×10, ×100 et Max. « Actualiser la partie » prend en compte le pseudo saisi.
+Pour se connecter à un autre monde compatible, saisir son adresse HTTP ou HTTPS dans le champ « Adresse du backend » de la barre latérale, puis valider. Cette adresse est mémorisée dans le navigateur et sert à la fois aux images et à GraphQL. Les boutons du multiplicateur global permettent de choisir ×1, ×10, ×100 ou Max. « Actualiser la partie » prend en compte le pseudo saisi.
 
 Le champ `lastupdate` reste une chaîne conformément au schéma du PDF backend ; le serveur l'écrit en date ISO. Les requêtes Angular sont générées depuis ce même schéma, sans avoir besoin d'un serveur démarré :
 

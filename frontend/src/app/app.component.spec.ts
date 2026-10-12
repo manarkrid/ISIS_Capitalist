@@ -72,8 +72,7 @@ describe('AppComponent', () => {
     expect(service.refreshWorld).toHaveBeenCalled();
   });
 
-  it('boucle les quantités et actualise le pseudo saisi', () => {
-    for (const expected of [10, 100, -1, 1]) { app.cycleQuantity(); expect(app.qtmulti()).toBe(expected); }
+  it('actualise le pseudo saisi', () => {
     app.usernameInput.set('Autre joueur'); app.refreshWorld();
     expect(service.commitName).toHaveBeenCalledWith('Autre joueur');
   });

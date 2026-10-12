@@ -62,7 +62,7 @@
       <div class="products-toolbar">
         <div><h2>Vos spécialités</h2><p>Cliquez sur un plat pour lancer sa production.</p></div>
         <div class="quantity-control" role="group" aria-label="Quantité à acheter">
-          <button class="selected" (click)="cycleQuantity()" aria-label="Changer la quantité : fois 1, fois 10, fois 100, maximum">{{ qtLabels[qtmulti()] }} ↻</button>
+          @for (quantity of qtOptions; track quantity) { <button [class.selected]="qtmulti() === quantity" [attr.aria-pressed]="qtmulti() === quantity" (click)="qtmulti.set(quantity)">{{ qtLabels[quantity] }}</button> }
         </div>
       </div>
       <div class="products-list" [attr.aria-busy]="gameService.loading()">

@@ -96,10 +96,6 @@ export class AppComponent implements OnDestroy {
     else void this.gameService.refreshWorld();
   }
   changeServer(): void { this.closeModal(); this.gameService.changeServer(this.serverInput()); }
-  cycleQuantity(): void {
-    const index = this.qtOptions.indexOf(this.qtmulti());
-    this.qtmulti.set(this.qtOptions[(index + 1) % this.qtOptions.length]);
-  }
   getProdName(id: number): string {
     if (id === 0) return 'Toutes les spécialités';
     if (id === -1) return 'Les anges actifs';
