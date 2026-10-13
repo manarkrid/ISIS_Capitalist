@@ -1,7 +1,7 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Product } from '../graphql/generated';
-import { GameServiceService } from '../game-service.service';
+import { Product } from '../graphql/operations';
+import { GameService } from '../game.service';
 import { BigvaluePipe } from '../bigvalue.pipe';
 import { SecondPipe } from '../second.pipe';
 
@@ -10,14 +10,51 @@ import { SecondPipe } from '../second.pipe';
   imports: [CommonModule, BigvaluePipe, SecondPipe],
   templateUrl: './produit.component.html', styleUrl: './produit.component.css',
 })
-export class ProduitComponent {
-  readonly gameService = inject(GameServiceService);
+export class ProduitComponent implements OnDestroy {
+  readonly gameService = inject(GameService);
   readonly prod = input<Product>();
   readonly qtmulti = input(1);
   readonly timeleft = computed(() => this.prod()?.timeleft ?? 0);
   readonly vitesse = computed(() => this.prod()?.vitesse ?? 1);
-  readonly progress = computed(() => this.timeleft() > 0
-    ? Math.min(100, Math.max(0, 100 * (1 - this.timeleft() / this.vitesse()))) : 0);
+  readonly progress = signal(0);
+  private starttime = 0;
+  private remainingAtStart = 0;
+  private durationAtStart = 1;
+  private animationFrame?: number;
+
+  constructor() {
+    effect(() => {
+      // Chaque état reçu recale l'animation sur le temps restant du monde.
+      const remaining = this.timeleft();
+      const duration = this.vitesse();
+      this.cancelAnimation();
+      this.remainingAtStart = remaining;
+      this.durationAtStart = duration;
+      this.starttime = performance.now();
+      this.progress.set(remaining > 0 ? this.progressPercent(remaining, duration) : 0);
+      if (remaining > 0) this.animationFrame = requestAnimationFrame(this.animate);
+    });
+  }
+
+  readonly animate = (currentTime: number): void => {
+    this.animationFrame = undefined;
+    const elapsed = Math.max(0, currentTime - this.starttime);
+    const remaining = Math.max(0, this.remainingAtStart - elapsed);
+    this.progress.set(this.progressPercent(remaining, this.durationAtStart));
+    // L'animation ne crédite aucun revenu : calcScore et productionDone s'en chargent.
+    if (remaining > 0) this.animationFrame = requestAnimationFrame(this.animate);
+  };
+
+  private progressPercent(remaining: number, duration: number): number {
+    return Math.min(100, Math.max(0, 100 * (1 - remaining / Math.max(1, duration))));
+  }
+
+  private cancelAnimation(): void {
+    if (this.animationFrame !== undefined) cancelAnimationFrame(this.animationFrame);
+    this.animationFrame = undefined;
+  }
+
+  ngOnDestroy(): void { this.cancelAnimation(); }
   readonly maxCanBuy = computed(() => {
     const product = this.prod();
     return product ? this.gameService.maxCanBuy(product) : 0;

@@ -254,7 +254,7 @@ export const GetWorldDocument = gql`
   })
   export class GetWorldGQL extends Apollo.Query<GetWorldQuery, GetWorldQueryVariables> {
     document = GetWorldDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -272,7 +272,7 @@ export const AcheterQtProduitDocument = gql`
   })
   export class AcheterQtProduitGQL extends Apollo.Mutation<AcheterQtProduitMutation, AcheterQtProduitMutationVariables> {
     document = AcheterQtProduitDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -290,7 +290,7 @@ export const LancerProductionProduitDocument = gql`
   })
   export class LancerProductionProduitGQL extends Apollo.Mutation<LancerProductionProduitMutation, LancerProductionProduitMutationVariables> {
     document = LancerProductionProduitDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -308,7 +308,7 @@ export const EngagerManagerDocument = gql`
   })
   export class EngagerManagerGQL extends Apollo.Mutation<EngagerManagerMutation, EngagerManagerMutationVariables> {
     document = EngagerManagerDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -326,7 +326,7 @@ export const AcheterCashUpgradeDocument = gql`
   })
   export class AcheterCashUpgradeGQL extends Apollo.Mutation<AcheterCashUpgradeMutation, AcheterCashUpgradeMutationVariables> {
     document = AcheterCashUpgradeDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -344,7 +344,7 @@ export const AcheterAngelUpgradeDocument = gql`
   })
   export class AcheterAngelUpgradeGQL extends Apollo.Mutation<AcheterAngelUpgradeMutation, AcheterAngelUpgradeMutationVariables> {
     document = AcheterAngelUpgradeDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -362,7 +362,7 @@ export const ResetWorldDocument = gql`
   })
   export class ResetWorldGQL extends Apollo.Mutation<ResetWorldMutation, ResetWorldMutationVariables> {
     document = ResetWorldDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }

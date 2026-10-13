@@ -90,8 +90,6 @@ h1 { color: #173d4e; font-family: Georgia, 'Times New Roman', serif; font-size: 
 .reset-confirmation p { font-size: 13px; line-height: 1.8; color: #7b5842; }
 .confirmation-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 17px; }
 .modal-error { margin: 15px 24px 0; padding: 12px; background: #fff0e6; color: #874023; border-radius: 6px; font-size: 12px; line-height: 1.5; }
-.snack { position: fixed; z-index: 10; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(520px, calc(100% - 32px)); width: max-content; border-radius: 9px; background: #153e4f; color: white; box-shadow: 0 5px 22px #10263240; padding: 13px 21px; font-size: 13px; line-height: 1.6; visibility: hidden; }
-.snack.visible { visibility: visible; }
 @media (max-width: 1150px) { .game-layout { grid-template-columns: 220px minmax(0, 1fr); } .left-panel { padding: 27px 17px; } .products-list { grid-template-columns: 1fr; } .right-panel { padding: 27px 25px; } .save-status { display: none; } }
 @media (max-width: 650px) {
   .game-layout { grid-template-columns: 1fr; }
@@ -130,7 +128,7 @@ h1 { color: #173d4e; font-family: Georgia, 'Times New Roman', serif; font-size: 
   .error-panel { align-items: stretch; flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { .loader { animation: none; } }
-.modal-snack { display: none; position: sticky; bottom: 0; padding: 13px 24px; background: #153e4f; color: #fff; font-size: 12px; line-height: 1.6; }
-.modal-snack.visible { display: block; }
 
 .server-block { margin-top: 0; padding-top: 0; }
+
+.action-btn > [matBadge] { margin-left: auto; margin-right: 15px; }

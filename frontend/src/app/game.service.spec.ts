@@ -1,20 +1,12 @@
 import { fakeAsync, flushMicrotasks, TestBed, tick } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
-import { GameServiceService } from './game-service.service';
-import { World, Product, RatioType, GetWorldGQL, AcheterQtProduitGQL, LancerProductionProduitGQL, EngagerManagerGQL, AcheterCashUpgradeGQL, AcheterAngelUpgradeGQL, ResetWorldGQL } from './graphql/generated';
+import { GameService } from './game.service';
+import { World, Product, RatioType, GetWorldGQL, AcheterQtProduitGQL, LancerProductionProduitGQL, EngagerManagerGQL, AcheterCashUpgradeGQL, AcheterAngelUpgradeGQL, ResetWorldGQL } from './graphql/operations';
 
-export function testWorld(): World {
-  return {
-    name: 'Tunisian Capitalist', logo: '', money: 100, score: 0,
-    activeangels: 0, totalangels: 0, angelbonus: 2, lastupdate: new Date().toISOString(),
-    allunlocks: [], upgrades: [], angelupgrades: [], managers: [],
-    products: [{ id: 1, name: 'Cookies', logo: '', quantite: 1, cout: 10, croissance: 1.07,
-      revenu: 1, vitesse: 1000, timeleft: 0, managerUnlocked: false, paliers: [] }],
-  };
-}
+import { testWorld } from './testing/world.fixture';
 
 describe('Synchronisation et règles client', () => {
-  let service: GameServiceService;
+  let service: GameService;
   let read: jasmine.Spy;
   let buy: jasmine.Spy;
   beforeEach(() => {
@@ -23,12 +15,12 @@ describe('Synchronisation et règles client', () => {
     const providers = [LancerProductionProduitGQL, EngagerManagerGQL, AcheterCashUpgradeGQL, AcheterAngelUpgradeGQL, ResetWorldGQL]
       .map(provide => ({ provide, useValue: { mutate: jasmine.createSpy('mutate').and.returnValue(of({ data: {} })) } }));
     TestBed.configureTestingModule({ providers: [
-      GameServiceService, { provide: GetWorldGQL, useValue: { fetch: read } },
+      GameService, { provide: GetWorldGQL, useValue: { fetch: read } },
       { provide: AcheterQtProduitGQL, useValue: { mutate: buy } }, ...providers,
     ] });
   });
   afterEach(() => { localStorage.removeItem('gameServerUrl'); TestBed.resetTestingModule(); });
-  function init() { service = TestBed.inject(GameServiceService); flushMicrotasks(); }
+  function init() { service = TestBed.inject(GameService); flushMicrotasks(); }
 
   it('crédite une seule fois une production manuelle, même après une longue attente', fakeAsync(() => {
     init(); service.world()!.products[0].timeleft = 250;
@@ -69,7 +61,7 @@ describe('Synchronisation et règles client', () => {
   }));
   it('ignore une ancienne réponse après changement de joueur', fakeAsync(() => {
     const old = new Subject<unknown>(); read.and.returnValue(old);
-    service = TestBed.inject(GameServiceService);
+    service = TestBed.inject(GameService);
     const next = testWorld(); next.money = 432;
     read.and.returnValue(of({ data: { getWorld: next } }));
     service.commitName('Nouveau joueur'); flushMicrotasks();
@@ -106,6 +98,25 @@ describe('Synchronisation et règles client', () => {
     service.ngOnDestroy();
   }));
 
+  it('applique les paliers individuels et globaux sans modifier le monde précédent', fakeAsync(() => {
+    init(); const world = testWorld();
+    const palier = { name: 'Palier', logo: '', idcible: 1, typeratio: RatioType.Gain, seuil: 1, ratio: 2, unlocked: false };
+    world.products[0].paliers = [palier];
+    world.allunlocks = [{ ...palier, name: 'Global', idcible: 0 }];
+    function freeze(value: unknown): void {
+      if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
+    }
+    freeze(world);
+    const next = service.applyAllUnlocks(service.applyPaliersForProduct(world, 1));
+    expect(next.products[0].revenu).toBe(4);
+    expect(next.products[0].paliers[0].unlocked).toBeTrue();
+    expect(next.allunlocks[0].unlocked).toBeTrue();
+    expect(world.products[0].revenu).toBe(1);
+    expect(world.products[0].paliers[0].unlocked).toBeFalse();
+    expect(service.applyAllUnlocks(service.applyPaliersForProduct(next, 1)).products[0].revenu).toBe(4);
+    service.ngOnDestroy();
+  }));
+
   it('calcule le maximum achetable et les anges selon les formules du sujet', fakeAsync(() => {
     init(); const product: Product = { ...service.world()!.products[0], croissance: 2 };
     service.world.update(w => ({ ...w!, money: 70, score: 1e15, totalangels: 100 }));
@@ -113,8 +124,9 @@ describe('Synchronisation et règles client', () => {
     expect(service.productionCost(product, 3)).toBe(70);
     expect(service.computeNewAngels()).toBe(50);
     const world = service.world()!;
-    service.applyBonusToWorld(world, { name: 'ange', logo: '', idcible: -1, typeratio: RatioType.Ange, seuil: 1, ratio: 3, unlocked: false });
-    expect(world.angelbonus).toBe(5);
+    const boosted = service.applyBonusToWorld(world, { name: 'ange', logo: '', idcible: -1, typeratio: RatioType.Ange, seuil: 1, ratio: 3, unlocked: false });
+    expect(boosted.angelbonus).toBe(5);
+    expect(world.angelbonus).toBe(2);
     service.ngOnDestroy();
   }));
 });

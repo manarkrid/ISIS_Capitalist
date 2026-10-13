@@ -102,7 +102,7 @@ Les anges sont donc une mécanique de progression avancée. Les anges dépensés
 - `backend/src/schema.graphql` : contrat fourni dans l'énoncé, conservé.
 - `backend/src/app.service.ts` : production, bonus et persistance JSON.
 - `backend/src/resolver.ts` : requête et mutations GraphQL.
-- `frontend/src/app/game-service.service.ts` : état partagé par signals et échanges avec le serveur.
+- `frontend/src/app/game.service.ts` : état partagé par signals et échanges avec le serveur.
 - `frontend/src/app/produit/` : affichage et interactions d'un produit.
 
 Les parties sont stockées dans `backend/userworlds/<pseudo>-world.json`. Les fichiers déjà fournis sont conservés ; les nouvelles sauvegardes sont ignorées par Git. La variable `USERWORLDS_DIR` permet d'utiliser un autre dossier, notamment pour les tests. Le pseudo est un identifiant de partie simple, comme prévu par le sujet ; il ne constitue pas une authentification.
@@ -134,3 +134,7 @@ npm run test:ci
 Les tests Angular nécessitent Google Chrome ; si nécessaire, définir `CHROME_BIN` vers son exécutable. Les tests serveur utilisent des sauvegardes temporaires et ne modifient pas les parties existantes.
 
 Pour vérifier manuellement : produire, acheter plusieurs unités, débloquer un manager, recharger la page, changer de pseudo puis revenir au premier. Vérifier ensuite les paliers, les améliorations et le nouveau départ depuis la fenêtre Investisseurs.
+
+## Correspondance avec les cours
+
+La relecture, les noms utilisés, les éléments Angular/GraphQL et les écarts entre les documents sont détaillés dans [docs/CONFORMITE_COURS.md](docs/CONFORMITE_COURS.md). Le client utilise `GameService`, `calcScore`, `productionDone`, les mises à jour immuables avec `map` et spread, et les SnackBars et badges Angular Material. Les requêtes restent générées avec `npm run codegen` dans `frontend/src/app/graphql/operations.ts`.

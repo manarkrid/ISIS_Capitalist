@@ -2,21 +2,25 @@ import { Component, computed, effect, ElementRef, inject, OnDestroy, signal, Vie
 import { CommonModule, registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { FormsModule } from '@angular/forms';
-import { GameServiceService } from './game-service.service';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { OverlayContainer } from '@angular/cdk/overlay';
+import { DOCUMENT } from '@angular/common';
+import { GameService } from './game.service';
 import { ProduitComponent } from './produit/produit.component';
 import { BigvaluePipe } from './bigvalue.pipe';
-import { Palier } from './graphql/generated';
+import { Palier } from './graphql/operations';
 
 type GameModal = 'managers' | 'unlocks' | 'upgrades' | 'angels' | 'angelUpgrades';
 registerLocaleData(localeFr);
 
 @Component({
   selector: 'app-root', standalone: true,
-  imports: [CommonModule, FormsModule, ProduitComponent, BigvaluePipe],
+  imports: [CommonModule, FormsModule, ProduitComponent, BigvaluePipe, MatBadgeModule, MatSnackBarModule],
   templateUrl: './app.component.html', styleUrl: './app.component.css',
 })
 export class AppComponent implements OnDestroy {
-  readonly gameService = inject(GameServiceService);
+  readonly gameService = inject(GameService);
   readonly world = this.gameService.world;
   readonly usernameInput = signal(this.gameService.user());
   readonly serverInput = signal(this.gameService.server());
@@ -48,22 +52,22 @@ export class AppComponent implements OnDestroy {
   readonly badgeAngels = computed(() => this.unavailable() ? 0 : this.angelUpgrades().filter(u => (this.world()?.activeangels ?? 0) >= u.seuil).length);
   readonly newAngels = computed(() => this.gameService.computeNewAngels());
   readonly unavailable = computed(() => this.gameService.loading() || this.gameService.busy() || !!this.gameService.error());
-  readonly snackVisible = signal(false);
-  readonly snackText = signal('');
-  private snackTimer?: ReturnType<typeof setTimeout>;
+  private readonly _snackBar = inject(MatSnackBar);
+  private readonly overlayContainer = inject(OverlayContainer);
+  private readonly document = inject(DOCUMENT);
   @ViewChild('gameDialog', { static: true }) private dialog!: ElementRef<HTMLDialogElement>;
 
   constructor() {
     effect(() => {
       const message = this.gameService.snackmessage();
       if (!message) return;
-      this.snackText.set(message);
-      this.snackVisible.set(true);
-      clearTimeout(this.snackTimer);
-      this.snackTimer = setTimeout(() => this.snackVisible.set(false), 4000);
+      this._snackBar.open(message, 'OK', { duration: 4000 });
     });
   }
-  ngOnDestroy(): void { clearTimeout(this.snackTimer); }
+  ngOnDestroy(): void {
+    this._snackBar.dismiss();
+    this.document.body.appendChild(this.overlayContainer.getContainerElement());
+  }
   commitName(): void {
     const name = this.usernameInput().trim();
     if (name && !this.gameService.loading() && !this.gameService.busy()) {
@@ -74,10 +78,13 @@ export class AppComponent implements OnDestroy {
   openModal(modal: GameModal): void {
     this.activeModal.set(modal);
     this.resetConfirmation.set(false);
+    // Le dialogue natif est dans la couche supérieure : les notifications doivent y être visibles.
+    this.dialog.nativeElement.appendChild(this.overlayContainer.getContainerElement());
     this.dialog.nativeElement.showModal();
   }
   closeModal(): void {
     this.dialog.nativeElement.close();
+    this.document.body.appendChild(this.overlayContainer.getContainerElement());
     this.activeModal.set(null);
     this.resetConfirmation.set(false);
   }

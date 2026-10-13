@@ -13,12 +13,12 @@
     <nav class="action-buttons" aria-label="Gérer votre partie">
       <button class="action-btn" (click)="openModal('managers')" [disabled]="!world()" aria-haspopup="dialog">
         <span class="nav-icon" aria-hidden="true">♟</span><span>Managers</span>
-        @if (badgeManagers() > 0) { <span class="badge" [attr.aria-label]="badgeManagers() + ' disponibles'">{{ badgeManagers() }}</span> }
+        <span [matBadge]="badgeManagers()" [matBadgeHidden]="badgeManagers() === 0" matBadgeOverlap="false" [matBadgeDescription]="badgeManagers() + ' disponibles'"></span>
       </button>
       <button class="action-btn" (click)="openModal('unlocks')" [disabled]="!world()" aria-haspopup="dialog"><span class="nav-icon" aria-hidden="true">↗</span><span>Paliers</span></button>
       <button class="action-btn" (click)="openModal('upgrades')" [disabled]="!world()" aria-haspopup="dialog">
         <span class="nav-icon" aria-hidden="true">✦</span><span>Améliorations</span>
-        @if (badgeUpgrades() > 0) { <span class="badge" [attr.aria-label]="badgeUpgrades() + ' disponibles'">{{ badgeUpgrades() }}</span> }
+        <span [matBadge]="badgeUpgrades()" [matBadgeHidden]="badgeUpgrades() === 0" matBadgeOverlap="false" [matBadgeDescription]="badgeUpgrades() + ' disponibles'"></span>
       </button>
       <button class="action-btn" (click)="openModal('angels')" [disabled]="!world()" aria-haspopup="dialog">
         <span class="nav-icon" aria-hidden="true">☀</span><span>Investisseurs</span>
@@ -26,7 +26,7 @@
       </button>
       <button class="action-btn" (click)="openModal('angelUpgrades')" [disabled]="!world()" aria-haspopup="dialog">
         <span class="nav-icon" aria-hidden="true">☆</span><span>Bonus des anges</span>
-        @if (badgeAngels() > 0) { <span class="badge" [attr.aria-label]="badgeAngels() + ' disponibles'">{{ badgeAngels() }}</span> }
+        <span [matBadge]="badgeAngels()" [matBadgeHidden]="badgeAngels() === 0" matBadgeOverlap="false" [matBadgeDescription]="badgeAngels() + ' disponibles'"></span>
       </button>
     </nav>
     <form class="player-block" (ngSubmit)="commitName()">
@@ -150,7 +150,5 @@
         }
       }
     </div>
-    <div class="modal-snack" role="status" aria-live="polite" [class.visible]="snackVisible()">{{ snackVisible() && activeModal() ? snackText() : '' }}</div>
   </div>
 </dialog>
-<div class="snack" role="status" aria-live="polite" [class.visible]="snackVisible() && !activeModal()">{{ snackVisible() && !activeModal() ? snackText() : '' }}</div>

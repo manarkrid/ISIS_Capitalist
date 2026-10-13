@@ -1,3 +1,4 @@
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { min-height: 100%; background: #f6f4ec; }
 body { min-height: 100%; color: #253d44; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; }

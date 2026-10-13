@@ -1,8 +1,9 @@
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
-import { GameServiceService } from './game-service.service';
-import { RatioType, World } from './graphql/generated';
+import { GameService } from './game.service';
+import { RatioType, World } from './graphql/operations';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
@@ -44,7 +45,7 @@ describe('AppComponent', () => {
     };
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [{ provide: GameServiceService, useValue: service }],
+      providers: [provideNoopAnimations(), { provide: GameService, useValue: service }],
     }).compileComponents();
     fixture = TestBed.createComponent(AppComponent);
     app = fixture.componentInstance;
@@ -75,6 +76,17 @@ describe('AppComponent', () => {
   it('actualise le pseudo saisi', () => {
     app.usernameInput.set('Autre joueur'); app.refreshWorld();
     expect(service.commitName).toHaveBeenCalledWith('Autre joueur');
+  });
+
+  it('affiche la SnackBar Material dans la fenêtre ouverte puis la replace sur la page', () => {
+    app.openModal('managers');
+    service.snackmessage.set('Manager engagé !');
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.querySelector('.mat-mdc-snack-bar-container')?.textContent).toContain('Manager engagé !');
+    app.closeModal();
+    expect(dialog.querySelector('.cdk-overlay-container')).toBeNull();
+    expect(document.body.querySelector('.mat-mdc-snack-bar-container')?.textContent).toContain('Manager engagé !');
   });
 
   it('exige une confirmation explicite avant de réinitialiser', async () => {
