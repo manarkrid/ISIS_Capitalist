@@ -7,6 +7,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
 import { GameService } from './game.service';
+import { AudioService } from './audio.service';
 import { ProduitComponent } from './produit/produit.component';
 import { BigvaluePipe } from './bigvalue.pipe';
 import { Palier } from './graphql/operations';
@@ -21,6 +22,7 @@ registerLocaleData(localeFr);
 })
 export class AppComponent implements OnDestroy {
   readonly gameService = inject(GameService);
+  readonly audioService = inject(AudioService);
   readonly world = this.gameService.world;
   readonly usernameInput = signal(this.gameService.user());
   readonly serverInput = signal(this.gameService.server());
@@ -91,13 +93,14 @@ export class AppComponent implements OnDestroy {
   dismissBackdrop(event: MouseEvent): void {
     if (event.target === event.currentTarget) this.closeModal();
   }
-  hireManager(manager: Palier): void { this.gameService.hireManager(manager); }
-  buyCashUpgrade(upgrade: Palier): void { this.gameService.buyCashUpgrade(upgrade); }
-  buyAngelUpgrade(upgrade: Palier): void { this.gameService.buyAngelUpgrade(upgrade); }
+  hireManager(manager: Palier): void { this.gameService.hireManager(manager); this.audioService.playManager(); }
+  buyCashUpgrade(upgrade: Palier): void { this.gameService.buyCashUpgrade(upgrade); this.audioService.playAchievement(); }
+  buyAngelUpgrade(upgrade: Palier): void { this.gameService.buyAngelUpgrade(upgrade); this.audioService.playAchievement(); }
   async doReset(): Promise<void> {
     if (!this.resetConfirmation() || this.unavailable()) return;
     if (await this.gameService.resetWorld()) this.closeModal();
   }
+  startAudio(): void { this.audioService.startBgMusic(); }
   refreshWorld(): void {
     if (this.usernameInput().trim() !== this.gameService.user()) this.commitName();
     else void this.gameService.refreshWorld();

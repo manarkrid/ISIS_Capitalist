@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, OnDestroy, signal } from '@
 import { CommonModule } from '@angular/common';
 import { Product } from '../graphql/operations';
 import { GameService } from '../game.service';
+import { AudioService } from '../audio.service';
 import { BigvaluePipe } from '../bigvalue.pipe';
 import { SecondPipe } from '../second.pipe';
 
@@ -12,6 +13,7 @@ import { SecondPipe } from '../second.pipe';
 })
 export class ProduitComponent implements OnDestroy {
   readonly gameService = inject(GameService);
+  readonly audioService = inject(AudioService);
   readonly prod = input<Product>();
   readonly qtmulti = input(1);
   readonly timeleft = computed(() => this.prod()?.timeleft ?? 0);
@@ -73,11 +75,15 @@ export class ProduitComponent implements OnDestroy {
   });
   startFabrication(): void {
     const product = this.prod();
-    if (product && this.canProduce()) void this.gameService.lancerProduction(product.id);
+    if (!product) return;
+    if (this.canProduce()) { this.audioService.playCoin(); void this.gameService.lancerProduction(product.id); }
+    else if (!this.unavailable() && product.quantite > 0) this.audioService.playError();
   }
   buy(): void {
     const product = this.prod();
-    if (product && this.canBuy()) void this.gameService.buyProduct(this.numberToBuy(), product);
+    if (!product) return;
+    if (this.canBuy()) { this.audioService.playYay(); void this.gameService.buyProduct(this.numberToBuy(), product); }
+    else if (!this.unavailable()) this.audioService.playError();
   }
   imageFallback(event: Event): void {
     const image = event.target as HTMLImageElement;

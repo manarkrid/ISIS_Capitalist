@@ -138,7 +138,10 @@ export class GameService implements OnDestroy {
     try {
       const result = await firstValueFrom(
         this.getWorldGQL
-          .fetch({ user: this.user() }, { fetchPolicy: 'no-cache' })
+          .fetch({
+            variables: { user: this.user() },
+            fetchPolicy: 'no-cache',
+          })
           .pipe(timeout(10000)),
       );
       if (session !== this.session || sequence !== this.readSequence)
@@ -313,9 +316,11 @@ export class GameService implements OnDestroy {
           await firstValueFrom(
             this.acheterQtGQL
               .mutate({
-                user: this.user(),
-                id: current.id,
-                quantite: quantity,
+                variables: {
+                  user: this.user(),
+                  id: current.id,
+                  quantite: quantity,
+                },
               })
               .pipe(timeout(10000)),
           )
@@ -358,8 +363,10 @@ export class GameService implements OnDestroy {
           await firstValueFrom(
             this.lancerProdGQL
               .mutate({
-                user: this.user(),
-                id: productId,
+                variables: {
+                  user: this.user(),
+                  id: productId,
+                },
               })
               .pipe(timeout(10000)),
           )
@@ -384,8 +391,10 @@ export class GameService implements OnDestroy {
           await firstValueFrom(
             this.engagerMgrGQL
               .mutate({
-                user: this.user(),
-                name: current.name,
+                variables: {
+                  user: this.user(),
+                  name: current.name,
+                },
               })
               .pipe(timeout(10000)),
           )
@@ -421,8 +430,10 @@ export class GameService implements OnDestroy {
           await firstValueFrom(
             this.cashUpgradeGQL
               .mutate({
-                user: this.user(),
-                name: current.name,
+                variables: {
+                  user: this.user(),
+                  name: current.name,
+                },
               })
               .pipe(timeout(10000)),
           )
@@ -458,8 +469,10 @@ export class GameService implements OnDestroy {
           await firstValueFrom(
             this.angelUpgradeGQL
               .mutate({
-                user: this.user(),
-                name: current.name,
+                variables: {
+                  user: this.user(),
+                  name: current.name,
+                },
               })
               .pipe(timeout(10000)),
           )
@@ -486,7 +499,9 @@ export class GameService implements OnDestroy {
           await firstValueFrom(
             this.resetWorldGQL
               .mutate({
-                user: this.user(),
+                variables: {
+                  user: this.user(),
+                },
               })
               .pipe(timeout(10000)),
           )

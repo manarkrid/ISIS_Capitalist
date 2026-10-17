@@ -27,3 +27,5 @@ h3 { font-size: 15px; color: #1c414e; }
 @media (min-width: 1151px) and (max-width: 1320px) { .product-card { grid-template-columns: 84px minmax(0, 1fr); gap: 10px; padding: 10px; } .production-info { font-size: 8px; } }
 @media (max-width: 650px) { .product-card { grid-template-columns: 97px minmax(0, 1fr); min-height: 170px; gap: 11px; padding: 10px; } }
 @media (max-width: 370px) { .product-card { grid-template-columns: 77px minmax(0, 1fr); gap: 9px; } .production-info { font-size: 8px; } .buy-btn { padding: 9px 7px; } }
+.icon-area.disabled { cursor: default; }
+.buy-btn.disabled { color: #82887d; background: #eeefe7; border-color: #e0e3d8; }

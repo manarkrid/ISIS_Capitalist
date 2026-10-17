@@ -1,23 +1,23 @@
 @if (prod(); as product) {
   <article class="product-card" [class.locked]="product.quantite === 0" [class.producing]="timeleft() > 0">
-    <button class="icon-area" (click)="startFabrication()" [disabled]="!canProduce()" [attr.aria-label]="'Lancer la production de ' + product.name" [title]="product.quantite === 0 ? 'Achetez cette spécialité pour produire' : product.managerUnlocked ? 'Production automatique' : timeleft() > 0 ? 'Production en cours' : 'Lancer la production'">
+    <button class="icon-area" (click)="startFabrication()" [class.disabled]="!canProduce()" [attr.aria-label]="'Lancer la production de ' + product.name">
       <img class="prod-img" [src]="gameService.imageUrl(product.logo)" [alt]="product.name" (error)="imageFallback($event)" />
-      <span class="image-action" aria-hidden="true">{{ product.quantite === 0 ? 'À découvrir' : product.managerUnlocked ? 'Automatique' : timeleft() > 0 ? 'En cuisine…' : '▶ Produire' }}</span>
+      <span class="image-action" aria-hidden="true">{{ product.quantite === 0 ? 'A decouvrir' : product.managerUnlocked ? 'Automatique' : timeleft() > 0 ? 'En cuisine...' : '&#9654; Produire' }}</span>
     </button>
     <div class="content-area">
-      <div class="product-header"><h3>{{ product.name }}</h3><span class="quantity" [attr.aria-label]="product.quantite + ' possédés'">×{{ product.quantite }}</span></div>
+      <div class="product-header"><h3>{{ product.name }}</h3><span class="quantity" [attr.aria-label]="product.quantite + ' possedeS'">x{{ product.quantite }}</span></div>
       <div class="production-info"><span>{{ product.managerUnlocked ? 'Manager en service' : 'Production manuelle' }}</span><span>{{ vitesse() | second }} / cycle</span></div>
       <div class="progressbar" role="progressbar" [attr.aria-label]="'Production de ' + product.name" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progress()">
         <div class="fill" [style.width.%]="progress()"></div>
         <span class="product-revenue"><span [innerHTML]="productionRevenue() | bigvalue"></span> DT / cycle</span>
       </div>
       <div class="timeleft-display">
-        @if (timeleft() > 0) { <span>En préparation</span><strong>{{ timeleft() | second }}</strong> }
+        @if (timeleft() > 0) { <span>En preparation</span><strong>{{ timeleft() | second }}</strong> }
         @else if (product.quantite === 0) { <span>Achetez pour ouvrir cette cuisine</span> }
-        @else { <span>Prêt à cuisiner</span><span>Cliquez sur le plat</span> }
+        @else { <span>Pret a cuisiner</span><span>Cliquez sur le plat</span> }
       </div>
-      <button class="buy-btn" [disabled]="!canBuy()" (click)="buy()" [title]="numberToBuy() === 0 ? 'Pas assez d’argent pour acheter une unité' : 'Acheter ' + numberToBuy() + ' unités de ' + product.name">
-        <span class="buy-label">Acheter <strong>×{{ numberToBuy() }}</strong></span>
+      <button class="buy-btn" [class.disabled]="!canBuy()" (click)="buy()">
+        <span class="buy-label">Acheter <strong>x{{ numberToBuy() }}</strong></span>
         @if (numberToBuy() > 0) { <span class="buy-cost"><span [innerHTML]="costToBuy() | bigvalue"></span> <small>DT</small></span> }
         @else { <span class="buy-cost">Fonds insuffisants</span> }
       </button>

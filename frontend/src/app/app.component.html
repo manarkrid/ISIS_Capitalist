@@ -1,4 +1,4 @@
-<div class="game-layout">
+<div class="game-layout" (click)="startAudio()">
   <aside class="left-panel" aria-label="Votre empire culinaire">
     <a class="brand" href="#specialites">
       @if (world(); as currentWorld) { <img [src]="gameService.imageUrl(currentWorld.logo)" alt="" (error)="imageFallback($event)" /> }
@@ -45,6 +45,10 @@
         <button type="submit" class="player-submit" [disabled]="!serverInput().trim() || gameService.loading() || gameService.busy()" aria-label="Se connecter au serveur">→</button>
       </div>
     </form>
+    <div class="audio-controls">
+      <button class="mute-btn" (click)="audioService.toggleMusic(); $event.stopPropagation()" [attr.aria-label]="audioService.playing() ? 'Arrêter la musique' : 'Lancer la musique'" title="Musique"><span aria-hidden="true">{{ audioService.playing() ? '⏹' : '▶' }}</span></button>
+      <button class="mute-btn" (click)="audioService.toggleMute(); $event.stopPropagation()" [attr.aria-pressed]="audioService.muted()" [attr.aria-label]="audioService.muted() ? 'Activer le son' : 'Couper le son'" title="Son"><span aria-hidden="true">{{ audioService.muted() ? '🔇' : '🔊' }}</span></button>
+    </div>
   </aside>
   <main class="right-panel" id="specialites">
     <header class="main-header">
@@ -56,7 +60,7 @@
       <p>Commencez petit.<br>Faites grandir votre cuisine.</p>
     </section>
     @if (gameService.error()) {
-      <div class="error-panel" role="alert"><div><strong>La partie n’a pas pu être synchronisée.</strong><p>{{ gameService.error() }}</p></div><button class="secondary-btn" (click)="refreshWorld()" [disabled]="gameService.loading() || gameService.busy()">Réessayer</button></div>
+      <div class="error-panel" role="alert"><div><strong>La partie n'a pas pu être synchronisée.</strong><p>{{ gameService.error() }}</p></div><button class="secondary-btn" (click)="refreshWorld()" [disabled]="gameService.loading() || gameService.busy()">Réessayer</button></div>
     }
     @if (world(); as currentWorld) {
       <div class="products-toolbar">
@@ -82,7 +86,7 @@
     <div class="modal-body">
       @switch (activeModal()) {
         @case ('managers') {
-          <p class="modal-description">Confiez une spécialité à un manager pour qu’elle produise toute seule.</p>
+          <p class="modal-description">Confiez une spécialité à un manager pour qu'elle produise toute seule.</p>
           <div class="modal-list">
             @for (manager of managers(); track manager.name) {
               <article class="modal-item">

@@ -132,3 +132,8 @@ h1 { color: #173d4e; font-family: Georgia, 'Times New Roman', serif; font-size: 
 .server-block { margin-top: 0; padding-top: 0; }
 
 .action-btn > [matBadge] { margin-left: auto; margin-right: 15px; }
+
+.mute-btn { background: #ffffff09; border: 1px solid #ffffff30; border-radius: 8px; color: #fffaf0; font-size: 20px; padding: 8px 12px; cursor: pointer; transition: background 0.2s; }
+.mute-btn:hover { background: #ffffff22; }
+.audio-controls { display: flex; gap: 8px; justify-content: center; }
+.server-block { margin-top: 0; padding-top: 0; }
