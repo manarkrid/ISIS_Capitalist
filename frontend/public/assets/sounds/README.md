@@ -1,3 +1,3 @@
 # Sons du jeu
-Sources libres recommandées :
+Sources  :
 - https://freesound.org
